@@ -436,224 +436,114 @@
             alert('⚠️ Voeg eerst werknemers en projecten toe!');
             return;
         }
-        const output = document.getElementById('schedule-output');
-        let html = '<div style="margin-bottom:12px; color:green;">✅ Planning gegenereerd!</div>';
-
-        // --- Constraint & fairness scheduling ---
-        // Settings
+        // --- Compact month-view schedule generation ---
         const maxHours = window.settings.maxHours || 40;
         const minRest = window.settings.minRest || 12;
-        const hoursPerAssignment = 8; // can be made configurable
-
-        // Helper: get week number from date (ISO week)
-        function getWeekNumber(dateStr) {
-            const d = new Date(dateStr);
-            d.setHours(0,0,0,0);
-            d.setDate(d.getDate() + 4 - (d.getDay()||7));
-            const yearStart = new Date(d.getFullYear(),0,1);
-            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
-        }
-
-        // Gather all unique project dates (simulate 4 weeks from today)
+        const hoursPerAssignment = 8;
+        // Generate 4 weeks from today
         const today = new Date();
         const weeks = [0,1,2,3].map(offset => {
             const d = new Date(today);
             d.setDate(today.getDate() + offset*7);
-            return {
-                weekNumber: getWeekNumber(d.toISOString().split('T')[0]),
-                startDate: d.toISOString().split('T')[0]
-            };
+            return d.toISOString().split('T')[0];
         });
-
-        // Build stats object for fairness
+        // Stats for fairness
         const stats = {};
         window.employees.forEach(emp => {
-            stats[emp.id] = {
-                totalHours: 0,
-                assignments: 0,
-                lastAssignedWeek: null,
-                weekHours: {}, // weekNumber: hours
-                assignedDays: new Set()
-            };
+            stats[emp.id] = { totalHours:0, assignments:0, lastWeek:null, weekHours:{}, assignedDays: new Set() };
         });
-
-        // Hard constraints
-        function passesHardConstraints(emp, date, weekNumber) {
-            // Vacation: skip if date in any vacation
+        function passesConstraints(emp, date, week) {
             if (Array.isArray(emp.vacations)) {
-                for (const vac of emp.vacations) {
-                    if (date >= vac.start && date <= vac.end) return false;
+                for (const v of emp.vacations) {
+                    if (date >= v.start && date <= v.end) return false;
                 }
             }
-            // Max hours per week
-            if ((stats[emp.id].weekHours[weekNumber] || 0) + hoursPerAssignment > maxHours) return false;
-            // One assignment per day
+            if ((stats[emp.id].weekHours[week]||0) + hoursPerAssignment > maxHours) return false;
             if (stats[emp.id].assignedDays.has(date)) return false;
-            // (Optional) min rest: not implemented (no shift times)
             return true;
         }
-
-        // Fairness penalty
         function fairnessPenalty(stat, week) {
             let penalty = 0;
             penalty += stat.totalHours * 0.5;
             penalty += stat.assignments * 2;
-            if (stat.lastAssignedWeek === week - 1) penalty += 10;
+            if (stat.lastWeek === week - 1) penalty += 10;
             return penalty;
         }
-
-        // Score function
-        function calculateScore(emp, project, week, stats) {
-            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
+        function score(emp, project, week) {
+            const fav = (project.favoriteEmployees||[]).find(f=>f.id===emp.id);
             const priority = fav ? fav.priority : 0;
-            const penalty = fairnessPenalty(stats[emp.id], week);
-            return priority - penalty;
+            return priority - fairnessPenalty(stats[emp.id], week);
         }
-
-        // Assignment function
-        function assignEmployee(emp, project, week, date, schedule, stats) {
-            schedule.push({ project, emp, week, date });
-            stats[emp.id].totalHours += hoursPerAssignment;
-            stats[emp.id].assignments += 1;
-            stats[emp.id].lastAssignedWeek = week;
-            stats[emp.id].weekHours[week] = (stats[emp.id].weekHours[week]||0) + hoursPerAssignment;
-            stats[emp.id].assignedDays.add(date);
-        }
-
-        // Main scheduling loop: for each week, for each project, assign best employee
         const schedule = [];
-        weeks.forEach(({weekNumber, startDate}) => {
+        weeks.forEach((dateStr, idx) => {
+            const weekNumber = idx + 1;
             window.projects.forEach(project => {
-                // For demo: assign on the week's start date
-                const date = startDate;
-                // Filter candidates by hard constraints
                 const candidates = window.employees
-                    .filter(emp => passesHardConstraints(emp, date, weekNumber))
-                    .map(emp => ({
-                        emp,
-                        score: calculateScore(emp, project, weekNumber, stats)
-                    }))
-                    .sort((a, b) => b.score - a.score);
+                    .filter(emp => passesConstraints(emp, dateStr, weekNumber))
+                    .map(emp => ({ emp, score: score(emp, project, weekNumber) }))
+                    .sort((a,b)=>b.score - a.score);
                 const chosen = candidates[0];
                 if (chosen) {
-                    assignEmployee(chosen.emp, project, weekNumber, date, schedule, stats);
+                    schedule.push({ project, emp: chosen.emp, date: dateStr, week: weekNumber });
+                    stats[chosen.emp.id].totalHours += hoursPerAssignment;
+                    stats[chosen.emp.id].assignments += 1;
+                    stats[chosen.emp.id].lastWeek = weekNumber;
+                    stats[chosen.emp.id].weekHours[weekNumber] = (stats[chosen.emp.id].weekHours[weekNumber]||0)+hoursPerAssignment;
+                    stats[chosen.emp.id].assignedDays.add(dateStr);
                 }
             });
         });
-
-        // Render schedule
-        html += '<div class="schedule-list">';
-        schedule.forEach(item => {
-            const { project, emp, week, date } = item;
-            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
-            html += `
-                <div class="schedule-item">
-                    <div class="schedule-project">${escapeHtml(project.name)}</div>
-                    <div class="schedule-details">
-                        <span class="schedule-label">Werknemer:</span><span class="schedule-value">${escapeHtml(emp.name)}</span>
-                        <span class="schedule-label">Week:</span><span class="schedule-value">${week}</span>
-                        <span class="schedule-label">Datum:</span><span class="schedule-value">${formatDate(date)}</span>
-                        <span class="schedule-label">Prioriteit:</span><span class="schedule-value">${fav ? fav.priority+'%' : '0%'}</span>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-
-        // Table view
-        html += '<table style="margin-top:12px;"><tr><th>Project</th><th>Werknemer</th><th>Week</th><th>Datum</th><th>%</th></tr>';
-        schedule.forEach(item => {
-            const { project, emp, week, date } = item;
-            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
-            html += `<tr><td>${escapeHtml(project.name)}</td><td>${escapeHtml(emp.name)}</td><td>${week}</td><td>${formatDate(date)}</td><td>${fav ? fav.priority+'%' : '0%'}</td></tr>`;
-        });
-        html += '</table>';
-        output.innerHTML = html;
+        // Only render calendar, clear old output
+        const output = document.getElementById('schedule-output');
+        if (output) output.innerHTML = '';
         renderCalendar(schedule);
         // --- FullCalendar Integration ---
         let calendar;
-        let currentSchedule = [];
         function renderCalendar(schedule) {
-            currentSchedule = schedule;
-            initFullCalendar(schedule);
-            populateEmployeeFilter();
-        }
-
-        function initFullCalendar(schedule) {
             const calendarEl = document.getElementById('calendar');
             if (!calendarEl) return;
-            const events = schedule.map(a => {
-                const pad = n => String(n).padStart(2, '0');
-                const start = a.date + 'T' + pad(a.startHour || 9) + ':00';
-                const end = a.date + 'T' + pad(a.endHour || 17) + ':00';
-                return {
-                    id: a.emp.id + '-' + a.project.id + '-' + a.date,
-                    title: `${a.project.name} (${a.emp.name})`,
-                    start,
-                    end,
-                    extendedProps: {
-                        employeeId: a.emp.id,
-                        projectId: a.project.id,
-                        priority: a.priority
-                    },
-                    backgroundColor: getProjectColor(a.project.name),
-                    borderColor: '#333'
-                };
-            });
+            const events = schedule.map(a => ({
+                title: a.emp.name,
+                start: a.date,
+                allDay: true,
+                backgroundColor: getProjectColor(a.project.name),
+                borderColor: '#333',
+                extendedProps: {
+                    projectName: a.project.name,
+                    employeeId: a.emp.id,
+                    priority: a.priority || 0
+                }
+            }));
             if (calendar) calendar.destroy();
             calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridWeek',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,dayGridWeek'
-                },
+                initialView: 'dayGridMonth',
+                locale: 'nl',
+                headerToolbar: { left:'prev,next today', center:'title', right:'' },
                 events,
+                displayEventTime: false,
                 editable: true,
-                eventDrop: function(info) { handleEventChange(info.event); },
-                eventResize: function(info) { handleEventChange(info.event); },
-                eventMouseEnter: function(info) {
-                    info.el.title = `Werknemer: ${info.event.title}\nPrioriteit: ${info.event.extendedProps.priority}%`;
-                }
+                dayCellDidMount: function(info) {
+                    // Show tooltip with all assignments on that day
+                    const dayEvents = calendar.getEvents().filter(ev => ev.startStr === info.dateStr);
+                    if(dayEvents.length > 0){
+                        info.el.title = dayEvents.map(ev => `${ev.title} (${ev.extendedProps.projectName})`).join('\n');
+                    }
+                },
+                eventDrop: function(info){ /* Optional: handle drag/drop */ },
+                eventResize: function(info){ /* Optional: handle resize */ }
             });
             calendar.render();
         }
 
         const projectColors = {};
-        function getProjectColor(projectName) {
-            if (!projectColors[projectName]) {
-                const hue = Math.floor(Math.random() * 360);
-                projectColors[projectName] = `hsl(${hue}, 70%, 50%)`;
+        function getProjectColor(name){
+            if(!projectColors[name]){
+                const hue = Math.floor(Math.random()*360);
+                projectColors[name] = `hsl(${hue}, 70%, 50%)`;
             }
-            return projectColors[projectName];
+            return projectColors[name];
         }
-
-        function handleEventChange(event) {
-            // Optionally update local data or backend here
-            // Example: update assignment in currentSchedule and call saveCompanyData()
-        }
-
-        function populateEmployeeFilter() {
-            const filterEl = document.getElementById('employee-filter');
-            if (!filterEl) return;
-            filterEl.innerHTML = '<option value="">Alle werknemers</option>';
-            (window.employees || []).forEach(emp => {
-                filterEl.innerHTML += `<option value="${emp.id}">${escapeHtml(emp.name)}</option>`;
-            });
-        }
-
-        function updateCalendarFilter() {
-            const employeeId = document.getElementById('employee-filter').value;
-            if (!calendar) return;
-            calendar.getEvents().forEach(event => {
-                if (!employeeId || event.extendedProps.employeeId === employeeId) {
-                    event.setProp('display', 'auto');
-                } else {
-                    event.setProp('display', 'none');
-                }
-            });
-        }
-    }
+    } // <-- Close generateSchedule function
 
     /* Settings */
     function saveSettings() {
