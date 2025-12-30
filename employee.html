@@ -542,57 +542,39 @@
         async function loadMySchedule() {
             const scheduleDiv = document.getElementById('my-schedule');
             
-            // Local mode - load from localStorage
-            if (isLocalMode) {
-                const schedule = JSON.parse(localStorage.getItem('local_schedule') || '[]');
-                const mySchedule = schedule.filter(s => 
-                    (s.employee?.id || s.employee?._id) === userData.id ||
-                    s.employee?.name === userData.name
-                );
-                
-                if (mySchedule.length === 0) {
-                    scheduleDiv.innerHTML = '<p style="color: #999;">Geen planning beschikbaar.</p>';
-                    return;
-                }
-                
-                scheduleDiv.innerHTML = mySchedule.map(item => `
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
-                        <strong style="color: #2c3e50;">${item.project?.name || 'Project'}</strong>
-                        <div style="font-size: 13px; color: #666; margin-top: 4px;">📅 Week ${item.week}</div>
-                    </div>
-                `).join('');
+            // Always use local mode for GitHub Pages
+            const company = companyData[userData.companyCode];
+            if (!company) {
+                scheduleDiv.innerHTML = '<p style="color: #999;">Geen planning beschikbaar.</p>';
                 return;
             }
             
-            try {
-                const res = await fetch(`${API_URL}/schedule`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (res.ok) {
-                    const data = await res.json();
-                    const mySchedule = (data.schedule || []).filter(s =>
-                        (s.employee?.id || s.employee?._id) === userData.id
-                    );
-                    
-                    if (mySchedule.length === 0) {
-                        scheduleDiv.innerHTML = '<p style="color: #999;">Geen planning beschikbaar.</p>';
-                        return;
+            const schedule = [];
+            const weeks = [1, 2, 3, 4];
+            company.projects.forEach((proj, idx) => {
+                if (company.employees.length > 0) {
+                    const emp = company.employees.find(e => e.id === userData.id);
+                    if (emp) {
+                        schedule.push({
+                            project: proj,
+                            employee: emp,
+                            week: weeks[idx % weeks.length]
+                        });
                     }
-                    
-                    scheduleDiv.innerHTML = mySchedule.map(item => `
-                        <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
-                            <strong style="color: #2c3e50;">${item.project?.name || 'Project'}</strong>
-                            <div style="font-size: 13px; color: #666; margin-top: 4px;">📅 Week ${item.week}</div>
-                        </div>
-                    `).join('');
                 }
-            } catch (err) {
-                console.error('Error loading schedule:', err);
-                // Fallback to local
-                isLocalMode = true;
-                loadMySchedule();
+            });
+            
+            if (schedule.length === 0) {
+                scheduleDiv.innerHTML = '<p style="color: #999;">Geen planning beschikbaar.</p>';
+                return;
             }
+            
+            scheduleDiv.innerHTML = schedule.map(item => `
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+                    <strong style="color: #2c3e50;">${item.project?.name || 'Project'}</strong>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">📅 Week ${item.week}</div>
+                </div>
+            `).join('');
         }
         
         function showSection(section) {
@@ -715,76 +697,42 @@
                 return;
             }
             
-            // Local mode - store in localStorage
-            if (isLocalMode) {
-                const vacations = JSON.parse(localStorage.getItem('local_vacations') || '[]');
-                vacations.push({
-                    id: 'vac_' + Date.now(),
-                    employeeId: userData.id,
-                    start: start,
-                    end: end,
-                    status: 'pending'
-                });
-                localStorage.setItem('local_vacations', JSON.stringify(vacations));
-                alert('Vakantie aangevraagd!');
-                document.getElementById('vac-start').value = '';
-                document.getElementById('vac-end').value = '';
-                document.getElementById('vac-reason').value = '';
-                loadVacations();
-                return;
+            // Always use local mode for GitHub Pages
+            const company = companyData[userData.companyCode];
+            if (company) {
+                const employee = company.employees.find(e => e.id === userData.id);
+                if (employee) {
+                    if (!employee.vacations) employee.vacations = [];
+                    employee.vacations.push({
+                        id: 'vac_' + Date.now(),
+                        start: start,
+                        end: end,
+                        status: 'approved' // Auto-approve for demo
+                    });
+                    localStorage.setItem('companyData', JSON.stringify(companyData));
+                }
             }
             
-            try {
-                const res = await fetch(`${API_URL}/employees/${userData.id}/vacations`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ start, end })
-                });
-                
-                if (res.ok) {
-                    alert('Vakantie aangevraagd!');
-                    document.getElementById('vac-start').value = '';
-                    document.getElementById('vac-end').value = '';
-                    document.getElementById('vac-reason').value = '';
-                    loadVacations();
-                } else {
-                    const err = await res.json();
-                    alert(err.error || 'Fout bij aanvragen');
-                }
-            } catch (err) {
-                alert('Netwerkfout');
-            }
+            alert('Vakantie toegevoegd!');
+            document.getElementById('vac-start').value = '';
+            document.getElementById('vac-end').value = '';
+            document.getElementById('vac-reason').value = '';
+            loadVacations();
         }
         
         async function loadVacations() {
-            // Local mode
-            if (isLocalMode) {
-                const vacations = JSON.parse(localStorage.getItem('local_vacations') || '[]');
-                const myVacations = vacations.filter(v => v.employeeId === userData.id);
-                renderVacations(myVacations);
-                renderCalendar(myVacations);
+            // Always use local mode for GitHub Pages
+            const company = companyData[userData.companyCode];
+            if (!company) {
+                renderVacations([]);
+                renderCalendar([]);
                 return;
             }
             
-            try {
-                const res = await fetch(`${API_URL}/employees/${userData.id}/vacations`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (res.ok) {
-                    const vacations = await res.json();
-                    renderVacations(vacations);
-                    renderCalendar(vacations);
-                }
-            } catch (err) {
-                console.error('Error loading vacations:', err);
-                // Fallback to local
-                isLocalMode = true;
-                loadVacations();
-            }
+            const employee = company.employees.find(e => e.id === userData.id);
+            const vacations = employee ? employee.vacations || [] : [];
+            renderVacations(vacations);
+            renderCalendar(vacations);
         }
         
         function renderVacations(vacations) {
@@ -812,24 +760,16 @@
         async function deleteVacation(vacId) {
             if (!confirm('Vakantie annuleren?')) return;
             
-            // Local mode
-            if (isLocalMode) {
-                let vacations = JSON.parse(localStorage.getItem('local_vacations') || '[]');
-                vacations = vacations.filter(v => v.id !== vacId);
-                localStorage.setItem('local_vacations', JSON.stringify(vacations));
-                loadVacations();
-                return;
+            // Always use local mode for GitHub Pages
+            const company = companyData[userData.companyCode];
+            if (company) {
+                const employee = company.employees.find(e => e.id === userData.id);
+                if (employee && employee.vacations) {
+                    employee.vacations = employee.vacations.filter(v => v.id !== vacId);
+                    localStorage.setItem('companyData', JSON.stringify(companyData));
+                }
             }
-            
-            try {
-                await fetch(`${API_URL}/employees/${userData.id}/vacations/${vacId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                loadVacations();
-            } catch (err) {
-                alert('Fout bij annuleren');
-            }
+            loadVacations();
         }
         
         function renderCalendar(vacations) {
