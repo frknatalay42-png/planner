@@ -92,7 +92,7 @@ router.post('/register', [
         return res.status(500).json({ error: 'Could not generate unique company code' });
       }
 
-      const hashedPassword = hashPassword(password);
+      const hashedPassword = await bcrypt.hash(password, 12);
 
       const company = new Company({
         code: companyCode,

@@ -188,7 +188,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
 // Add favorite employee to project
 router.post('/:id/favorites', authenticateToken, [
-  body('employeeId').isMongoId().withMessage('Valid employee ID required'),
+  body('employeeId').trim().isLength({ min: 1 }).withMessage('Valid employee ID required'),
   body('priority').optional().isInt({ min: 0, max: 100 }).withMessage('Priority must be between 0 and 100')
 ], async (req, res) => {
   try {
@@ -203,32 +203,58 @@ router.post('/:id/favorites', authenticateToken, [
 
     const { employeeId, priority = 50 } = req.body;
 
-    // Check if employee belongs to company
-    const company = await Company.findById(req.user.id);
-    if (!company.employees.includes(employeeId)) {
-      return res.status(400).json({ error: 'Employee does not belong to this company' });
+    if (isDemoMode()) {
+      // Check if employee belongs to company
+      const employee = demoData.employees[employeeId];
+      if (!employee || employee.company !== req.user.id) {
+        return res.status(400).json({ error: 'Employee does not belong to this company' });
+      }
+
+      const project = demoData.projects[req.params.id];
+      if (!project || project.company !== req.user.id) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      // Check if already favorite
+      const existing = project.favoriteEmployees.find(fav => fav.employeeId === employeeId);
+      if (existing) {
+        return res.status(400).json({ error: 'Employee is already a favorite for this project' });
+      }
+
+      project.favoriteEmployees.push({ employeeId, priority });
+
+      res.json({
+        message: 'Favorite employee added successfully',
+        project
+      });
+    } else {
+      // Check if employee belongs to company
+      const company = await Company.findById(req.user.id);
+      if (!company.employees.includes(employeeId)) {
+        return res.status(400).json({ error: 'Employee does not belong to this company' });
+      }
+
+      const project = await Project.findOne({ _id: req.params.id, company: req.user.id });
+      if (!project) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      // Check if already favorite
+      const existing = project.favoriteEmployees.find(fav => fav.employeeId.toString() === employeeId);
+      if (existing) {
+        return res.status(400).json({ error: 'Employee is already a favorite for this project' });
+      }
+
+      project.favoriteEmployees.push({ employeeId, priority });
+      await project.save();
+
+      await project.populate('favoriteEmployees.employeeId', 'name email');
+
+      res.json({
+        message: 'Favorite employee added successfully',
+        project
+      });
     }
-
-    const project = await Project.findOne({ _id: req.params.id, company: req.user.id });
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-
-    // Check if already favorite
-    const existing = project.favoriteEmployees.find(fav => fav.employeeId.toString() === employeeId);
-    if (existing) {
-      return res.status(400).json({ error: 'Employee is already a favorite for this project' });
-    }
-
-    project.favoriteEmployees.push({ employeeId, priority });
-    await project.save();
-
-    await project.populate('favoriteEmployees.employeeId', 'name email');
-
-    res.json({
-      message: 'Favorite employee added successfully',
-      project
-    });
   } catch (error) {
     console.error('Add favorite error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -251,25 +277,44 @@ router.put('/:id/favorites/:employeeId', authenticateToken, [
 
     const { priority } = req.body;
 
-    const project = await Project.findOne({ _id: req.params.id, company: req.user.id });
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+    if (isDemoMode()) {
+      const project = demoData.projects[req.params.id];
+      if (!project || project.company !== req.user.id) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      const favorite = project.favoriteEmployees.find(fav => fav.employeeId === req.params.employeeId);
+      if (!favorite) {
+        return res.status(404).json({ error: 'Employee is not a favorite for this project' });
+      }
+
+      favorite.priority = priority;
+
+      res.json({
+        message: 'Priority updated successfully',
+        project
+      });
+    } else {
+      const project = await Project.findOne({ _id: req.params.id, company: req.user.id });
+      if (!project) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      const favorite = project.favoriteEmployees.find(fav => fav.employeeId.toString() === req.params.employeeId);
+      if (!favorite) {
+        return res.status(404).json({ error: 'Employee is not a favorite for this project' });
+      }
+
+      favorite.priority = priority;
+      await project.save();
+
+      await project.populate('favoriteEmployees.employeeId', 'name email');
+
+      res.json({
+        message: 'Priority updated successfully',
+        project
+      });
     }
-
-    const favorite = project.favoriteEmployees.find(fav => fav.employeeId.toString() === req.params.employeeId);
-    if (!favorite) {
-      return res.status(404).json({ error: 'Employee is not a favorite for this project' });
-    }
-
-    favorite.priority = priority;
-    await project.save();
-
-    await project.populate('favoriteEmployees.employeeId', 'name email');
-
-    res.json({
-      message: 'Priority updated successfully',
-      project
-    });
   } catch (error) {
     console.error('Update priority error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -283,22 +328,38 @@ router.delete('/:id/favorites/:employeeId', authenticateToken, async (req, res) 
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const project = await Project.findOne({ _id: req.params.id, company: req.user.id });
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+    if (isDemoMode()) {
+      const project = demoData.projects[req.params.id];
+      if (!project || project.company !== req.user.id) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      project.favoriteEmployees = project.favoriteEmployees.filter(
+        fav => fav.employeeId !== req.params.employeeId
+      );
+
+      res.json({
+        message: 'Favorite employee removed successfully',
+        project
+      });
+    } else {
+      const project = await Project.findOne({ _id: req.params.id, company: req.user.id });
+      if (!project) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      project.favoriteEmployees = project.favoriteEmployees.filter(
+        fav => fav.employeeId.toString() !== req.params.employeeId
+      );
+      await project.save();
+
+      await project.populate('favoriteEmployees.employeeId', 'name email');
+
+      res.json({
+        message: 'Favorite employee removed successfully',
+        project
+      });
     }
-
-    project.favoriteEmployees = project.favoriteEmployees.filter(
-      fav => fav.employeeId.toString() !== req.params.employeeId
-    );
-    await project.save();
-
-    await project.populate('favoriteEmployees.employeeId', 'name email');
-
-    res.json({
-      message: 'Favorite employee removed successfully',
-      project
-    });
   } catch (error) {
     console.error('Remove favorite error:', error);
     res.status(500).json({ error: 'Server error' });
