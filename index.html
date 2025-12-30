@@ -2,8 +2,6 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8" />
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>WorkPlan - Simpel Personeelsplanning</title>
     <style>
@@ -58,181 +56,100 @@
             </nav>
         </div>
     </header>
+
     <div class="container">
-        <section id="dashboard" class="section">
+        <!-- Dashboard -->
+        <div id="dashboard" class="section">
             <div class="card">
-                <h2>Dashboard</h2>
-                <button onclick="generateSchedule()" style="margin-bottom:20px;">Genereer rooster</button>
-                <div id="schedule-output"></div>
-                <div id="calendar"></div>
+                <h2>Planning Overzicht</h2>
+                <button onclick="generateSchedule()">Genereer Automatische Planning</button>
+                <div id="schedule-output" style="margin-top:20px;"></div>
             </div>
-        </section>
-        <section id="employees" class="section hidden">
+        </div>
+
+        <!-- Werknemers Beheer -->
+        <div id="employees" class="section hidden">
             <div class="card">
-                <h2>Werknemers</h2>
-                <input id="employee-name" placeholder="Naam" />
-                <input id="employee-email" placeholder="E-mail" />
-                <button onclick="addEmployee()">Toevoegen</button>
-                <div id="employees-list"></div>
-                <div class="csv-upload">
-                    <input type="file" accept=".csv" onchange="handleCSVUpload(event)" style="display:none;" id="csv-input" />
-                    <label for="csv-input" style="cursor:pointer;">📥 Importeer werknemers via CSV</label>
+                <h2>Werknemers Beheer</h2>
+                <h3>Nieuwe Werknemer Toevoegen</h3>
+                <input type="text" id="employee-name" placeholder="Naam werknemer">
+                <input type="email" id="employee-email" placeholder="E-mailadres">
+                <button onclick="addEmployee()">Werknemer Toevoegen</button>
+
+                <h3 style="margin-top:30px;">CSV Import</h3>
+                <div class="csv-upload" onclick="document.getElementById('csv-file').click()">
+                    <p>Klik hier om CSV bestand te uploaden</p>
+                    <p style="font-size:12px;color:#666;">Format: naam, email</p>
                 </div>
+                <input type="file" id="csv-file" accept=".csv" style="display:none;" onchange="handleCSVUpload(event)">
+
+                <h3 style="margin-top:30px;">Werknemers Lijst</h3>
+                <div id="employees-list"></div>
             </div>
-        </section>
-        <section id="projects" class="section hidden">
+        </div>
+
+        <!-- Projecten -->
+        <div id="projects" class="section hidden">
             <div class="card">
                 <h2>Projecten</h2>
-                <input id="project-name" placeholder="Projectnaam" />
-                <button onclick="addProject()">Toevoegen</button>
+                <h3>Nieuw Project</h3>
+                <input type="text" id="project-name" placeholder="Project naam">
+                <button onclick="addProject()">Project Toevoegen</button>
+
+                <h3 style="margin-top:30px;">Bestaande Projecten</h3>
                 <div id="projects-list"></div>
             </div>
-        </section>
-        <section id="vacation" class="section hidden">
+        </div>
+
+        <!-- Vakantie -->
+        <div id="vacation" class="section hidden">
             <div class="card">
-                <h2>Vakantie</h2>
-                <input id="vacation-start" type="date" />
-                <input id="vacation-end" type="date" />
-                <button onclick="addVacation()">Toevoegen</button>
+                <h2>Vakantie & Afwezigheid</h2>
+                <p>Selecteer data waarop je niet beschikbaar bent:</p>
+                <input type="date" id="vacation-start">
+                <input type="date" id="vacation-end">
+                <button onclick="addVacation()">Vakantie Toevoegen</button>
+
+                <h3 style="margin-top:20px;">Mijn Vakanties</h3>
                 <div id="vacation-list"></div>
             </div>
-        </section>
-        <section id="settings" class="section hidden">
+        </div>
+
+        <!-- Instellingen -->
+        <div id="settings" class="section hidden">
             <div class="card">
-                <h2>Instellingen</h2>
-                <label>Max uren per week: <input id="max-hours" type="number" min="1" max="168" /></label>
-                <label>Min rust tussen diensten (uren): <input id="min-rest" type="number" min="0" max="48" /></label>
-                <button onclick="saveSettings()">Opslaan</button>
+                <h2>Planning Instellingen</h2>
+                <label>
+                    Max uren per week:
+                    <input type="number" id="max-hours" value="40" style="width:100px;">
+                </label>
+                <label>
+                    Min rust tussen diensten (uur):
+                    <input type="number" id="min-rest" value="12" style="width:100px;">
+                </label>
+                <button onclick="saveSettings()">Instellingen Opslaan</button>
             </div>
-        </section>
+        </div>
     </div>
+
     <script>
-        // Demo data for first run
-        const DEMO = {
-            employees: [
-                { id: '1', name: 'Jan Jansen', email: 'jan@bedrijf.nl', referralCode: 'JAN123', tempPassword: 'welkom1', vacations: [] },
-                { id: '2', name: 'Piet Pietersen', email: 'piet@bedrijf.nl', referralCode: 'PIET12', tempPassword: 'welkom2', vacations: [] }
-            ],
-            projects: [
-                { id: 'a', name: 'Project Alpha', favoriteEmployees: [{ id: '1', priority: 80 }] },
-                { id: 'b', name: 'Project Beta', favoriteEmployees: [{ id: '2', priority: 60 }] }
-            ],
-            settings: { maxHours: 40, minRest: 12 }
-        };
-    // FullCalendar globals
-    let calendar;
-    const projectColors = {};
+    /***********************
+     * Minimal, working script
+     ***********************/
+    // Demo initial data
+    const DEMO = {
+        employees: [
+            { id: 'emp1', name: 'Jan Werknemer', email: 'jan@demo.nl', referralCode: 'WORK001', tempPassword: 'werk123', vacations: [] },
+            { id: 'emp2', name: 'Marie Medewerker', email: 'marie@demo.nl', referralCode: 'WORK002', tempPassword: 'werk123', vacations: [] }
+        ],
+        projects: [
+            { id: 'proj1', name: 'Website Redesign', favoriteEmployees: [] },
+            { id: 'proj2', name: 'App Development', favoriteEmployees: [] }
+        ],
+        settings: { maxHours: 40, minRest: 12 }
+    };
 
-    function getProjectColor(name){
-        if(!projectColors[name]){
-            const hue = Math.floor(Math.random()*360);
-            projectColors[name] = `hsl(${hue}, 70%, 50%)`;
-        }
-        return projectColors[name];
-    }
-
-    function renderCalendar(schedule) {
-        const calendarEl = document.getElementById('calendar');
-        if (!calendarEl) return;
-
-        const events = schedule.map(a => ({
-            title: a.emp.name,
-            start: a.date,
-            allDay: true,
-            backgroundColor: getProjectColor(a.project.name),
-            borderColor: '#333',
-            extendedProps: {
-                projectName: a.project.name,
-                employeeId: a.emp.id,
-                priority: a.priority || 0
-            }
-        }));
-
-        if (calendar) calendar.destroy();
-        calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'nl',
-            headerToolbar: { left:'prev,next today', center:'title', right:'' },
-            events,
-            displayEventTime: false,
-            editable: true,
-            dayCellDidMount: function(info) {
-                const dayEvents = calendar.getEvents().filter(ev => ev.startStr === info.dateStr);
-                if(dayEvents.length > 0){
-                    info.el.title = dayEvents.map(ev => `${ev.title} (${ev.extendedProps.projectName})`).join('\n');
-                }
-            },
-            eventDrop: function(info){ /* Optional: handle drag/drop */ },
-            eventResize: function(info){ /* Optional: handle resize */ }
-        });
-        calendar.render();
-    }
-
-    function generateSchedule() {
-        if (!window.employees || window.employees.length === 0 || !window.projects || window.projects.length === 0) {
-            alert('⚠️ Voeg eerst werknemers en projecten toe!');
-            return;
-        }
-        // --- Schedule generation logic (unchanged) ---
-        const maxHours = window.settings.maxHours || 40;
-        const minRest = window.settings.minRest || 12;
-        const hoursPerAssignment = 8;
-        const today = new Date();
-        const weeks = [0,1,2,3].map(offset => {
-            const d = new Date(today);
-            d.setDate(today.getDate() + offset*7);
-            return d.toISOString().split('T')[0];
-        });
-        const stats = {};
-        window.employees.forEach(emp => {
-            stats[emp.id] = { totalHours:0, assignments:0, lastWeek:null, weekHours:{}, assignedDays: new Set() };
-        });
-        function passesConstraints(emp, date, week) {
-            if (Array.isArray(emp.vacations)) {
-                for (const v of emp.vacations) {
-                    if (date >= v.start && date <= v.end) return false;
-                }
-            }
-            if ((stats[emp.id].weekHours[week]||0) + hoursPerAssignment > maxHours) return false;
-            if (stats[emp.id].assignedDays.has(date)) return false;
-            return true;
-        }
-        function fairnessPenalty(stat, week) {
-            let penalty = 0;
-            penalty += stat.totalHours * 0.5;
-            penalty += stat.assignments * 2;
-            if (stat.lastWeek === week - 1) penalty += 10;
-            return penalty;
-        }
-        function score(emp, project, week) {
-            const fav = (project.favoriteEmployees||[]).find(f=>f.id===emp.id);
-            const priority = fav ? fav.priority : 0;
-            return priority - fairnessPenalty(stats[emp.id], week);
-        }
-        const schedule = [];
-        weeks.forEach((dateStr, idx) => {
-            const weekNumber = idx + 1;
-            window.projects.forEach(project => {
-                const candidates = window.employees
-                    .filter(emp => passesConstraints(emp, dateStr, weekNumber))
-                    .map(emp => ({ emp, score: score(emp, project, weekNumber) }))
-                    .sort((a,b)=>b.score - a.score);
-                const chosen = candidates[0];
-                if (chosen) {
-                    schedule.push({ project, emp: chosen.emp, date: dateStr, week: weekNumber });
-                    stats[chosen.emp.id].totalHours += hoursPerAssignment;
-                    stats[chosen.emp.id].assignments += 1;
-                    stats[chosen.emp.id].lastWeek = weekNumber;
-                    stats[chosen.emp.id].weekHours[weekNumber] = (stats[chosen.emp.id].weekHours[weekNumber]||0)+hoursPerAssignment;
-                    stats[chosen.emp.id].assignedDays.add(dateStr);
-                }
-            });
-        });
-        // Only render the calendar, do not output any text or table
-        const output = document.getElementById('schedule-output');
-        if (output) output.innerHTML = '';
-        renderCalendar(schedule);
-    }
+    // App state (safe defaults so UI functions won't crash)
     window.employees = [];
     window.projects = [];
     window.vacations = [];
@@ -419,7 +336,7 @@
                         </div>
                     </div>
                 `;
-            }).join('') : '<p style="color:#666; font-style:italic; margin-top:10px;">&#9888; Voeg eerst werknemers toe om favorieten toe te wijzen.</p>';
+            }).join('') : '<p style="color:#666; font-style:italic; margin-top:10px;">⚠️ Voeg eerst werknemers toe om favorieten toe te wijzen.</p>';
             return `
                 <div class="project-card card" style="margin-bottom:12px;">
                     <div class="project-name" style="font-weight:700;">${escapeHtml(project.name)}</div>
@@ -497,114 +414,140 @@
             alert('⚠️ Voeg eerst werknemers en projecten toe!');
             return;
         }
-        // --- Compact month-view schedule generation ---
+        const output = document.getElementById('schedule-output');
+        let html = '<div style="margin-bottom:12px; color:green;">✅ Planning gegenereerd!</div>';
+
+        // --- Constraint & fairness scheduling ---
+        // Settings
         const maxHours = window.settings.maxHours || 40;
         const minRest = window.settings.minRest || 12;
-        const hoursPerAssignment = 8;
-        // Generate 4 weeks from today
+        const hoursPerAssignment = 8; // can be made configurable
+
+        // Helper: get week number from date (ISO week)
+        function getWeekNumber(dateStr) {
+            const d = new Date(dateStr);
+            d.setHours(0,0,0,0);
+            d.setDate(d.getDate() + 4 - (d.getDay()||7));
+            const yearStart = new Date(d.getFullYear(),0,1);
+            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        }
+
+        // Gather all unique project dates (simulate 4 weeks from today)
         const today = new Date();
         const weeks = [0,1,2,3].map(offset => {
             const d = new Date(today);
             d.setDate(today.getDate() + offset*7);
-            return d.toISOString().split('T')[0];
+            return {
+                weekNumber: getWeekNumber(d.toISOString().split('T')[0]),
+                startDate: d.toISOString().split('T')[0]
+            };
         });
-        // Stats for fairness
+
+        // Build stats object for fairness
         const stats = {};
         window.employees.forEach(emp => {
-            stats[emp.id] = { totalHours:0, assignments:0, lastWeek:null, weekHours:{}, assignedDays: new Set() };
+            stats[emp.id] = {
+                totalHours: 0,
+                assignments: 0,
+                lastAssignedWeek: null,
+                weekHours: {}, // weekNumber: hours
+                assignedDays: new Set()
+            };
         });
-        function passesConstraints(emp, date, week) {
+
+        // Hard constraints
+        function passesHardConstraints(emp, date, weekNumber) {
+            // Vacation: skip if date in any vacation
             if (Array.isArray(emp.vacations)) {
-                for (const v of emp.vacations) {
-                    if (date >= v.start && date <= v.end) return false;
+                for (const vac of emp.vacations) {
+                    if (date >= vac.start && date <= vac.end) return false;
                 }
             }
-            if ((stats[emp.id].weekHours[week]||0) + hoursPerAssignment > maxHours) return false;
+            // Max hours per week
+            if ((stats[emp.id].weekHours[weekNumber] || 0) + hoursPerAssignment > maxHours) return false;
+            // One assignment per day
             if (stats[emp.id].assignedDays.has(date)) return false;
+            // (Optional) min rest: not implemented (no shift times)
             return true;
         }
+
+        // Fairness penalty
         function fairnessPenalty(stat, week) {
             let penalty = 0;
             penalty += stat.totalHours * 0.5;
             penalty += stat.assignments * 2;
-            if (stat.lastWeek === week - 1) penalty += 10;
+            if (stat.lastAssignedWeek === week - 1) penalty += 10;
             return penalty;
         }
-        function score(emp, project, week) {
-            const fav = (project.favoriteEmployees||[]).find(f=>f.id===emp.id);
+
+        // Score function
+        function calculateScore(emp, project, week, stats) {
+            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
             const priority = fav ? fav.priority : 0;
-            return priority - fairnessPenalty(stats[emp.id], week);
+            const penalty = fairnessPenalty(stats[emp.id], week);
+            return priority - penalty;
         }
+
+        // Assignment function
+        function assignEmployee(emp, project, week, date, schedule, stats) {
+            schedule.push({ project, emp, week, date });
+            stats[emp.id].totalHours += hoursPerAssignment;
+            stats[emp.id].assignments += 1;
+            stats[emp.id].lastAssignedWeek = week;
+            stats[emp.id].weekHours[week] = (stats[emp.id].weekHours[week]||0) + hoursPerAssignment;
+            stats[emp.id].assignedDays.add(date);
+        }
+
+        // Main scheduling loop: for each week, for each project, assign best employee
         const schedule = [];
-        weeks.forEach((dateStr, idx) => {
-            const weekNumber = idx + 1;
+        weeks.forEach(({weekNumber, startDate}) => {
             window.projects.forEach(project => {
+                // For demo: assign on the week's start date
+                const date = startDate;
+                // Filter candidates by hard constraints
                 const candidates = window.employees
-                    .filter(emp => passesConstraints(emp, dateStr, weekNumber))
-                    .map(emp => ({ emp, score: score(emp, project, weekNumber) }))
-                    .sort((a,b)=>b.score - a.score);
+                    .filter(emp => passesHardConstraints(emp, date, weekNumber))
+                    .map(emp => ({
+                        emp,
+                        score: calculateScore(emp, project, weekNumber, stats)
+                    }))
+                    .sort((a, b) => b.score - a.score);
                 const chosen = candidates[0];
                 if (chosen) {
-                    schedule.push({ project, emp: chosen.emp, date: dateStr, week: weekNumber });
-                    stats[chosen.emp.id].totalHours += hoursPerAssignment;
-                    stats[chosen.emp.id].assignments += 1;
-                    stats[chosen.emp.id].lastWeek = weekNumber;
-                    stats[chosen.emp.id].weekHours[weekNumber] = (stats[chosen.emp.id].weekHours[weekNumber]||0)+hoursPerAssignment;
-                    stats[chosen.emp.id].assignedDays.add(dateStr);
+                    assignEmployee(chosen.emp, project, weekNumber, date, schedule, stats);
                 }
             });
         });
-        // Only render calendar, clear old output
-        const output = document.getElementById('schedule-output');
-        if (output) output.innerHTML = '';
-        renderCalendar(schedule);
-        // --- FullCalendar Integration ---
-        let calendar;
-        function renderCalendar(schedule) {
-            const calendarEl = document.getElementById('calendar');
-            if (!calendarEl) return;
-            const events = schedule.map(a => ({
-                title: a.emp.name,
-                start: a.date,
-                allDay: true,
-                backgroundColor: getProjectColor(a.project.name),
-                borderColor: '#333',
-                extendedProps: {
-                    projectName: a.project.name,
-                    employeeId: a.emp.id,
-                    priority: a.priority || 0
-                }
-            }));
-            if (calendar) calendar.destroy();
-            calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'nl',
-                headerToolbar: { left:'prev,next today', center:'title', right:'' },
-                events,
-                displayEventTime: false,
-                editable: true,
-                dayCellDidMount: function(info) {
-                    // Show tooltip with all assignments on that day
-                    const dayEvents = calendar.getEvents().filter(ev => ev.startStr === info.dateStr);
-                    if(dayEvents.length > 0){
-                        info.el.title = dayEvents.map(ev => `${ev.title} (${ev.extendedProps.projectName})`).join('\n');
-                    }
-                },
-                eventDrop: function(info){ /* Optional: handle drag/drop */ },
-                eventResize: function(info){ /* Optional: handle resize */ }
-            });
-            calendar.render();
-        }
 
-        const projectColors = {};
-        function getProjectColor(name){
-            if(!projectColors[name]){
-                const hue = Math.floor(Math.random()*360);
-                projectColors[name] = `hsl(${hue}, 70%, 50%)`;
-            }
-            return projectColors[name];
-        }
-    } 
+        // Render schedule
+        html += '<div class="schedule-list">';
+        schedule.forEach(item => {
+            const { project, emp, week, date } = item;
+            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
+            html += `
+                <div class="schedule-item">
+                    <div class="schedule-project">${escapeHtml(project.name)}</div>
+                    <div class="schedule-details">
+                        <span class="schedule-label">Werknemer:</span><span class="schedule-value">${escapeHtml(emp.name)}</span>
+                        <span class="schedule-label">Week:</span><span class="schedule-value">${week}</span>
+                        <span class="schedule-label">Datum:</span><span class="schedule-value">${formatDate(date)}</span>
+                        <span class="schedule-label">Prioriteit:</span><span class="schedule-value">${fav ? fav.priority+'%' : '0%'}</span>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        // Table view
+        html += '<table style="margin-top:12px;"><tr><th>Project</th><th>Werknemer</th><th>Week</th><th>Datum</th><th>%</th></tr>';
+        schedule.forEach(item => {
+            const { project, emp, week, date } = item;
+            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
+            html += `<tr><td>${escapeHtml(project.name)}</td><td>${escapeHtml(emp.name)}</td><td>${week}</td><td>${formatDate(date)}</td><td>${fav ? fav.priority+'%' : '0%'}</td></tr>`;
+        });
+        html += '</table>';
+        output.innerHTML = html;
+    }
 
     /* Settings */
     function saveSettings() {
@@ -613,7 +556,7 @@
             minRest: parseInt(document.getElementById('min-rest').value, 10) || 12
         };
         saveCompanyData();
-        alert('&#x2705; Instellingen opgeslagen!');
+        alert('✅ Instellingen opgeslagen!');
     }
 
     /* Small utilities */
@@ -625,7 +568,7 @@
 
     function escapeHtml(s) {
         if (!s) return '';
-        return String(s).replace(/[&<>"']/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]); });
+        return String(s).replace(/[&<>"']/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
     }
 
     // On load
@@ -638,7 +581,6 @@
         updateProjectsList();
         updateVacationList();
         showSection('dashboard');
-        // populateEmployeeFilter(); // (commented out, not defined)
         // wire csv click fallback: already handled by csv-upload div
     });
     </script>
