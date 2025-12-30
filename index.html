@@ -59,119 +59,118 @@
         </div>
     </header>
 
-    <div class="container">
-        <!-- Dashboard -->
-        <div id="dashboard" class="section">
-            <div class="card">
-                <h2>Planning Overzicht</h2>
-                <button onclick="generateSchedule()">Genereer Automatische Planning</button>
-                <div id="schedule-output" style="margin-top:20px;"></div>
-                <div id="calendar-controls" style="margin-bottom:12px;">
-                    <label>
-                        Aantal weken: 
-                        <select id="week-count" onchange="updateCalendarFilter()">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4" selected>4</option>
-                        </select>
-                    </label>
-                    <label style="margin-left:20px;">
-                        Filter werknemer: 
-                        <select id="employee-filter" onchange="updateCalendarFilter()">
-                            <option value="">Alle werknemers</option>
-                        </select>
-                    </label>
-                </div>
-                <div id="fullcalendar-container" style="margin-top:20px;">
-                    <div id="calendar"></div>
-                </div>
-            </div>
-        </div>
+    // FullCalendar globals
+    let calendar;
+    const projectColors = {};
 
-        <!-- Werknemers Beheer -->
-        <div id="employees" class="section hidden">
-            <div class="card">
-                <h2>Werknemers Beheer</h2>
-                <h3>Nieuwe Werknemer Toevoegen</h3>
-                <input type="text" id="employee-name" placeholder="Naam werknemer">
-                <input type="email" id="employee-email" placeholder="E-mailadres">
-                <button onclick="addEmployee()">Werknemer Toevoegen</button>
+    function getProjectColor(name){
+        if(!projectColors[name]){
+            const hue = Math.floor(Math.random()*360);
+            projectColors[name] = `hsl(${hue}, 70%, 50%)`;
+        }
+        return projectColors[name];
+    }
 
-                <h3 style="margin-top:30px;">CSV Import</h3>
-                <div class="csv-upload" onclick="document.getElementById('csv-file').click()">
-                    <p>Klik hier om CSV bestand te uploaden</p>
-                    <p style="font-size:12px;color:#666;">Format: naam, email</p>
-                </div>
-                <input type="file" id="csv-file" accept=".csv" style="display:none;" onchange="handleCSVUpload(event)">
+    function renderCalendar(schedule) {
+        const calendarEl = document.getElementById('calendar');
+        if (!calendarEl) return;
 
-                <h3 style="margin-top:30px;">Werknemers Lijst</h3>
-                <div id="employees-list"></div>
-            </div>
-        </div>
+        const events = schedule.map(a => ({
+            title: a.emp.name,
+            start: a.date,
+            allDay: true,
+            backgroundColor: getProjectColor(a.project.name),
+            borderColor: '#333',
+            extendedProps: {
+                projectName: a.project.name,
+                employeeId: a.emp.id,
+                priority: a.priority || 0
+            }
+        }));
 
-        <!-- Projecten -->
-        <div id="projects" class="section hidden">
-            <div class="card">
-                <h2>Projecten</h2>
-                <h3>Nieuw Project</h3>
-                <input type="text" id="project-name" placeholder="Project naam">
-                <button onclick="addProject()">Project Toevoegen</button>
+        if (calendar) calendar.destroy();
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'nl',
+            headerToolbar: { left:'prev,next today', center:'title', right:'' },
+            events,
+            displayEventTime: false,
+            editable: true,
+            dayCellDidMount: function(info) {
+                const dayEvents = calendar.getEvents().filter(ev => ev.startStr === info.dateStr);
+                if(dayEvents.length > 0){
+                    info.el.title = dayEvents.map(ev => `${ev.title} (${ev.extendedProps.projectName})`).join('\n');
+                }
+            },
+            eventDrop: function(info){ /* Optional: handle drag/drop */ },
+            eventResize: function(info){ /* Optional: handle resize */ }
+        });
+        calendar.render();
+    }
 
-                <h3 style="margin-top:30px;">Bestaande Projecten</h3>
-                <div id="projects-list"></div>
-            </div>
-        </div>
-
-        <!-- Vakantie -->
-        <div id="vacation" class="section hidden">
-            <div class="card">
-                <h2>Vakantie & Afwezigheid</h2>
-                <p>Selecteer data waarop je niet beschikbaar bent:</p>
-                <input type="date" id="vacation-start">
-                <input type="date" id="vacation-end">
-                <button onclick="addVacation()">Vakantie Toevoegen</button>
-
-                <h3 style="margin-top:20px;">Mijn Vakanties</h3>
-                <div id="vacation-list"></div>
-            </div>
-        </div>
-
-        <!-- Instellingen -->
-        <div id="settings" class="section hidden">
-            <div class="card">
-                <h2>Planning Instellingen</h2>
-                <label>
-                    Max uren per week:
-                    <input type="number" id="max-hours" value="40" style="width:100px;">
-                </label>
-                <label>
-                    Min rust tussen diensten (uur):
-                    <input type="number" id="min-rest" value="12" style="width:100px;">
-                </label>
-                <button onclick="saveSettings()">Instellingen Opslaan</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    /***********************
-     * Minimal, working script
-     ***********************/
-    // Demo initial data
-    const DEMO = {
-        employees: [
-            { id: 'emp1', name: 'Jan Werknemer', email: 'jan@demo.nl', referralCode: 'WORK001', tempPassword: 'werk123', vacations: [] },
-            { id: 'emp2', name: 'Marie Medewerker', email: 'marie@demo.nl', referralCode: 'WORK002', tempPassword: 'werk123', vacations: [] }
-        ],
-        projects: [
-            { id: 'proj1', name: 'Website Redesign', favoriteEmployees: [] },
-            { id: 'proj2', name: 'App Development', favoriteEmployees: [] }
-        ],
-        settings: { maxHours: 40, minRest: 12 }
-    };
-
-    // App state (safe defaults so UI functions won't crash)
+    function generateSchedule() {
+        if (!window.employees || window.employees.length === 0 || !window.projects || window.projects.length === 0) {
+            alert('⚠️ Voeg eerst werknemers en projecten toe!');
+            return;
+        }
+        const maxHours = window.settings.maxHours || 40;
+        const minRest = window.settings.minRest || 12;
+        const hoursPerAssignment = 8;
+        const today = new Date();
+        const weeks = [0,1,2,3].map(offset => {
+            const d = new Date(today);
+            d.setDate(today.getDate() + offset*7);
+            return d.toISOString().split('T')[0];
+        });
+        const stats = {};
+        window.employees.forEach(emp => {
+            stats[emp.id] = { totalHours:0, assignments:0, lastWeek:null, weekHours:{}, assignedDays: new Set() };
+        });
+        function passesConstraints(emp, date, week) {
+            if (Array.isArray(emp.vacations)) {
+                for (const v of emp.vacations) {
+                    if (date >= v.start && date <= v.end) return false;
+                }
+            }
+            if ((stats[emp.id].weekHours[week]||0) + hoursPerAssignment > maxHours) return false;
+            if (stats[emp.id].assignedDays.has(date)) return false;
+            return true;
+        }
+        function fairnessPenalty(stat, week) {
+            let penalty = 0;
+            penalty += stat.totalHours * 0.5;
+            penalty += stat.assignments * 2;
+            if (stat.lastWeek === week - 1) penalty += 10;
+            return penalty;
+        }
+        function score(emp, project, week) {
+            const fav = (project.favoriteEmployees||[]).find(f=>f.id===emp.id);
+            const priority = fav ? fav.priority : 0;
+            return priority - fairnessPenalty(stats[emp.id], week);
+        }
+        const schedule = [];
+        weeks.forEach((dateStr, idx) => {
+            const weekNumber = idx + 1;
+            window.projects.forEach(project => {
+                const candidates = window.employees
+                    .filter(emp => passesConstraints(emp, dateStr, weekNumber))
+                    .map(emp => ({ emp, score: score(emp, project, weekNumber) }))
+                    .sort((a,b)=>b.score - a.score);
+                const chosen = candidates[0];
+                if (chosen) {
+                    schedule.push({ project, emp: chosen.emp, date: dateStr, week: weekNumber });
+                    stats[chosen.emp.id].totalHours += hoursPerAssignment;
+                    stats[chosen.emp.id].assignments += 1;
+                    stats[chosen.emp.id].lastWeek = weekNumber;
+                    stats[chosen.emp.id].weekHours[weekNumber] = (stats[chosen.emp.id].weekHours[weekNumber]||0)+hoursPerAssignment;
+                    stats[chosen.emp.id].assignedDays.add(dateStr);
+                }
+            });
+        });
+        const output = document.getElementById('schedule-output');
+        if (output) output.innerHTML = '';
+        renderCalendar(schedule);
+    }
     window.employees = [];
     window.projects = [];
     window.vacations = [];
@@ -543,7 +542,7 @@
             }
             return projectColors[name];
         }
-    } // <-- Close generateSchedule function
+    } 
 
     /* Settings */
     function saveSettings() {
@@ -577,7 +576,7 @@
         updateProjectsList();
         updateVacationList();
         showSection('dashboard');
-        populateEmployeeFilter();
+        // populateEmployeeFilter(); // (commented out, not defined)
         // wire csv click fallback: already handled by csv-upload div
     });
     </script>
