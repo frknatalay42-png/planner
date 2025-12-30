@@ -2,6 +2,8 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8" />
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>WorkPlan - Simpel Personeelsplanning</title>
     <style>
@@ -64,6 +66,26 @@
                 <h2>Planning Overzicht</h2>
                 <button onclick="generateSchedule()">Genereer Automatische Planning</button>
                 <div id="schedule-output" style="margin-top:20px;"></div>
+                <div id="calendar-controls" style="margin-bottom:12px;">
+                    <label>
+                        Aantal weken: 
+                        <select id="week-count" onchange="updateCalendarFilter()">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4" selected>4</option>
+                        </select>
+                    </label>
+                    <label style="margin-left:20px;">
+                        Filter werknemer: 
+                        <select id="employee-filter" onchange="updateCalendarFilter()">
+                            <option value="">Alle werknemers</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="fullcalendar-container" style="margin-top:20px;">
+                    <div id="calendar"></div>
+                </div>
             </div>
         </div>
 
@@ -547,6 +569,90 @@
         });
         html += '</table>';
         output.innerHTML = html;
+        renderCalendar(schedule);
+        // --- FullCalendar Integration ---
+        let calendar;
+        let currentSchedule = [];
+        function renderCalendar(schedule) {
+            currentSchedule = schedule;
+            initFullCalendar(schedule);
+            populateEmployeeFilter();
+        }
+
+        function initFullCalendar(schedule) {
+            const calendarEl = document.getElementById('calendar');
+            if (!calendarEl) return;
+            const events = schedule.map(a => {
+                const pad = n => String(n).padStart(2, '0');
+                const start = a.date + 'T' + pad(a.startHour || 9) + ':00';
+                const end = a.date + 'T' + pad(a.endHour || 17) + ':00';
+                return {
+                    id: a.emp.id + '-' + a.project.id + '-' + a.date,
+                    title: `${a.project.name} (${a.emp.name})`,
+                    start,
+                    end,
+                    extendedProps: {
+                        employeeId: a.emp.id,
+                        projectId: a.project.id,
+                        priority: a.priority
+                    },
+                    backgroundColor: getProjectColor(a.project.name),
+                    borderColor: '#333'
+                };
+            });
+            if (calendar) calendar.destroy();
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,dayGridWeek'
+                },
+                events,
+                editable: true,
+                eventDrop: function(info) { handleEventChange(info.event); },
+                eventResize: function(info) { handleEventChange(info.event); },
+                eventMouseEnter: function(info) {
+                    info.el.title = `Werknemer: ${info.event.title}\nPrioriteit: ${info.event.extendedProps.priority}%`;
+                }
+            });
+            calendar.render();
+        }
+
+        const projectColors = {};
+        function getProjectColor(projectName) {
+            if (!projectColors[projectName]) {
+                const hue = Math.floor(Math.random() * 360);
+                projectColors[projectName] = `hsl(${hue}, 70%, 50%)`;
+            }
+            return projectColors[projectName];
+        }
+
+        function handleEventChange(event) {
+            // Optionally update local data or backend here
+            // Example: update assignment in currentSchedule and call saveCompanyData()
+        }
+
+        function populateEmployeeFilter() {
+            const filterEl = document.getElementById('employee-filter');
+            if (!filterEl) return;
+            filterEl.innerHTML = '<option value="">Alle werknemers</option>';
+            (window.employees || []).forEach(emp => {
+                filterEl.innerHTML += `<option value="${emp.id}">${escapeHtml(emp.name)}</option>`;
+            });
+        }
+
+        function updateCalendarFilter() {
+            const employeeId = document.getElementById('employee-filter').value;
+            if (!calendar) return;
+            calendar.getEvents().forEach(event => {
+                if (!employeeId || event.extendedProps.employeeId === employeeId) {
+                    event.setProp('display', 'auto');
+                } else {
+                    event.setProp('display', 'none');
+                }
+            });
+        }
     }
 
     /* Settings */
@@ -581,6 +687,7 @@
         updateProjectsList();
         updateVacationList();
         showSection('dashboard');
+        populateEmployeeFilter();
         // wire csv click fallback: already handled by csv-upload div
     });
     </script>
