@@ -320,6 +320,7 @@ function addEmployee() {
     document.getElementById('employee-name').value = '';
     document.getElementById('employee-email').value = '';
     updateEmployeesList();
+    updateProjectsList(); // Update projects view to show new employee checkboxes
     saveCompanyData();
 
     setTimeout(() => {
@@ -350,6 +351,7 @@ function removeEmployee(id) {
     if (confirm('⚠️ Weet je zeker dat je deze werknemer wilt verwijderen?')) {
         window.employees = window.employees.filter(emp => emp.id !== id);
         updateEmployeesList();
+        updateProjectsList(); // Update projects view to remove employee checkboxes
         saveCompanyData();
     }
 }
@@ -392,6 +394,7 @@ function handleCSVUpload(event) {
 
         saveCompanyData();
         updateEmployeesList();
+        updateProjectsList(); // Update projects view to show new employee checkboxes
         alert(`✅ CSV geïmporteerd! ${added} werknemers toegevoegd.`);
     };
     reader.readAsText(file);
@@ -420,7 +423,7 @@ function updateProjectsList() {
             <div class="project-name">${project.name}</div>
             <div style="margin-top: 15px;">
                 <strong>Favoriete werknemers (% voorrang):</strong>
-                ${window.employees.map(emp => {
+                ${window.employees && window.employees.length > 0 ? window.employees.map(emp => {
                     const isFav = project.favoriteEmployees.find(f => f.id === emp.id);
                     return `
                         <div class="favorite-employee-item">
@@ -439,7 +442,7 @@ function updateProjectsList() {
                             </div>
                         </div>
                     `;
-                }).join('')}
+                }).join('') : '<p style="color: #666; font-style: italic; margin-top: 10px;">⚠️ Voeg eerst werknemers toe in het "Werknemers" tabblad om favorieten toe te wijzen.</p>'}
             </div>
         </div>
     `).join('');
