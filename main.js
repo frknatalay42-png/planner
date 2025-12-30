@@ -544,7 +544,6 @@ function generateSchedule() {
         const availableEmployees = window.employees.filter(emp => {
             if (currentUser.type === 'employee' && emp.id !== currentUser.employeeId) return false;
 
-            const emp = window.employees.find(e => e.id === emp.id);
             const isOnVacation = emp?.vacations?.some(vac => {
                 const today = new Date().toISOString().split('T')[0];
                 return today >= vac.start && today <= vac.end;
@@ -585,7 +584,6 @@ function generateSchedule() {
 
     window.projects.forEach(project => {
         const availableEmployees = window.employees.filter(emp => {
-            const emp = window.employees.find(e => e.id === emp.id);
             const isOnVacation = emp?.vacations?.some(vac => {
                 const today = new Date().toISOString().split('T')[0];
                 return today >= vac.start && today <= vac.end;
