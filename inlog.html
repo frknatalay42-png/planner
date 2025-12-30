@@ -735,6 +735,36 @@
                 return;
             }
             
+            // Try API login first
+            fetch('http://localhost:3001/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, loginType })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userData', JSON.stringify(data.user));
+                    
+                    // Redirect to appropriate page
+                    if (data.user.type === 'company') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'employee.html';
+                    }
+                } else {
+                    // Fallback to local login
+                    localLogin(username, password);
+                }
+            })
+            .catch(() => {
+                // API not available, use local login
+                localLogin(username, password);
+            });
+        }
+        
+        function localLogin(username, password) {
             if (loginType === 'company') {
                 const company = companyData[username.toUpperCase()];
                 if (company && company.password === password) {
@@ -743,7 +773,15 @@
                         code: username.toUpperCase(),
                         email: company.adminEmail
                     };
-                    showApp();
+                    // Save to localStorage for new pages
+                    localStorage.setItem('userData', JSON.stringify({
+                        type: 'company',
+                        code: username.toUpperCase(),
+                        name: company.name || username.toUpperCase(),
+                        email: company.adminEmail
+                    }));
+                    localStorage.setItem('token', 'local-' + Date.now());
+                    window.location.href = 'admin.html';
                 } else {
                     showError('login-error', 'Ongeldige bedrijfscode of wachtwoord');
                 }
@@ -760,8 +798,17 @@
                             employeeId: employee.id,
                             name: employee.name
                         };
+                        // Save to localStorage for new pages
+                        localStorage.setItem('userData', JSON.stringify({
+                            type: 'employee',
+                            id: employee.id,
+                            name: employee.name,
+                            email: employee.email,
+                            companyCode: companyCode
+                        }));
+                        localStorage.setItem('token', 'local-' + Date.now());
                         found = true;
-                        showApp();
+                        window.location.href = 'employee.html';
                         break;
                     }
                 }

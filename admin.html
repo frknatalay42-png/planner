@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WorkPlan - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-info span {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        nav {
+            background: #34495e;
+            padding: 8px 0;
+        }
+        
+        nav .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        nav button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        nav button:hover, nav button.active {
+            background: #2980b9;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        h3 {
+            font-size: 15px;
+            margin: 15px 0 10px;
+            color: #34495e;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: #555;
+            font-size: 13px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            background: #229954;
+        }
+        
+        button.secondary {
+            background: #95a5a6;
+        }
+        
+        button.danger {
+            background: #e74c3c;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        /* Employee list */
+        .employee-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .employee-details {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .employee-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .employee-meta {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .employee-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .employee-actions button {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        
+        /* Project list */
+        .project-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .project-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: #2c3e50;
+        }
+        
+        .favorite-section {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .favorite-employee {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+        }
+        
+        .favorite-employee input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .priority-slider {
+            width: 100px;
+        }
+        
+        /* Schedule */
+        .schedule-item {
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .schedule-project {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .schedule-employee {
+            font-size: 13px;
+            color: #555;
+            margin-top: 4px;
+        }
+        
+        /* CSV Upload */
+        .csv-upload {
+            border: 2px dashed #3498db;
+            padding: 20px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #f8f9fa;
+            margin-bottom: 15px;
+        }
+        
+        .csv-upload:hover {
+            background: #e8f4f8;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        
+        .success {
+            background: #efe;
+            color: #2a2;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card.green {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+        
+        .stat-card.orange {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        
+        @media (max-width: 600px) {
+            .employee-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .employee-actions {
+                width: 100%;
+            }
+            
+            .employee-actions button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>WorkPlan Admin</h1>
+            <div class="user-info">
+                <span id="company-name"></span>
+                <button class="logout-btn" onclick="logout()">Uitloggen</button>
+            </div>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="nav-content">
+            <button onclick="showSection('dashboard')" class="active" id="nav-dashboard">Dashboard</button>
+            <button onclick="showSection('employees')" id="nav-employees">Werknemers</button>
+            <button onclick="showSection('projects')" id="nav-projects">Projecten</button>
+            <button onclick="showSection('schedule')" id="nav-schedule">Planning</button>
+            <button onclick="showSection('settings')" id="nav-settings">Instellingen</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <!-- Dashboard -->
+        <div id="dashboard" class="section active">
+            <div class="card">
+                <h2>Overzicht</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-employees">0</div>
+                        <div class="stat-label">Werknemers</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-value" id="stat-projects">0</div>
+                        <div class="stat-label">Projecten</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-value" id="stat-vacations">0</div>
+                        <div class="stat-label">Vakanties</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Snelle Acties</h2>
+                <button onclick="showSection('employees')" style="margin-right: 10px;">+ Werknemer</button>
+                <button onclick="showSection('projects')" style="margin-right: 10px;">+ Project</button>
+                <button onclick="generateSchedule()">Planning Genereren</button>
+            </div>
+        </div>
+        
+        <!-- Employees -->
+        <div id="employees" class="section">
+            <div class="card">
+                <h2>Werknemer Toevoegen</h2>
+                <div class="form-group">
+                    <label>Naam</label>
+                    <input type="text" id="emp-name" placeholder="Volledige naam">
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="emp-email" placeholder="email@voorbeeld.nl">
+                </div>
+                <button onclick="addEmployee()">Werknemer Toevoegen</button>
+                
+                <h3>CSV Import</h3>
+                <div class="csv-upload" onclick="document.getElementById('csv-file').click()">
+                    <p>📁 Klik om CSV te uploaden</p>
+                    <p style="font-size: 12px; color: #666;">Format: naam, email</p>
+                </div>
+                <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(event)">
+            </div>
+            
+            <div class="card">
+                <h2>Werknemers Lijst</h2>
+                <div id="employees-list"></div>
+            </div>
+        </div>
+        
+        <!-- Projects -->
+        <div id="projects" class="section">
+            <div class="card">
+                <h2>Project Toevoegen</h2>
+                <div class="form-group">
+                    <label>Projectnaam</label>
+                    <input type="text" id="project-name-input" placeholder="Naam van het project">
+                </div>
+                <button onclick="addProject()">Project Toevoegen</button>
+            </div>
+            
+            <div class="card">
+                <h2>Projecten & Favoriete Werknemers</h2>
+                <div id="projects-list"></div>
+            </div>
+        </div>
+        
+        <!-- Schedule -->
+        <div id="schedule" class="section">
+            <div class="card">
+                <h2>Planning Genereren</h2>
+                <p style="margin-bottom: 15px; color: #666;">Genereer automatisch een planning op basis van beschikbaarheid en voorkeuren.</p>
+                <button onclick="generateSchedule()">🔄 Planning Genereren</button>
+            </div>
+            
+            <div class="card">
+                <h2>Huidige Planning</h2>
+                <div id="schedule-output">
+                    <p style="color: #999;">Nog geen planning gegenereerd.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings -->
+        <div id="settings" class="section">
+            <div class="card">
+                <h2>Bedrijfsinstellingen</h2>
+                <div class="form-group">
+                    <label>Max uren per week</label>
+                    <input type="number" id="max-hours" value="40">
+                </div>
+                <div class="form-group">
+                    <label>Min rust tussen diensten (uur)</label>
+                    <input type="number" id="min-rest" value="12">
+                </div>
+                <button onclick="saveSettings()">Instellingen Opslaan</button>
+            </div>
+            
+            <div class="card">
+                <h2>Bedrijfscode</h2>
+                <p style="font-size: 24px; font-weight: bold; color: #3498db;" id="company-code"></p>
+                <p style="font-size: 13px; color: #666; margin-top: 8px;">Deel deze code met werknemers om te registreren.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        let token = localStorage.getItem('token');
+        let userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        let employees = [];
+        let projects = [];
+        
+        // Check auth
+        if (!token || userData.type !== 'company') {
+            window.location.href = 'inlog.html';
+        }
+        
+        // Init
+        document.getElementById('company-name').textContent = userData.name || 'Bedrijf';
+        document.getElementById('company-code').textContent = userData.code || '';
+        
+        loadData();
+        
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+            document.getElementById('nav-' + section).classList.add('active');
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+            window.location.href = 'inlog.html';
+        }
+        
+        async function loadData() {
+            try {
+                const res = await fetch(`${API_URL}/companies`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    employees = data.employees || [];
+                    projects = data.projects || [];
+                    updateStats();
+                    renderEmployees();
+                    renderProjects();
+                }
+            } catch (err) {
+                console.error('Load error:', err);
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-employees').textContent = employees.length;
+            document.getElementById('stat-projects').textContent = projects.length;
+            const vacations = employees.reduce((sum, e) => sum + (e.vacations?.length || 0), 0);
+            document.getElementById('stat-vacations').textContent = vacations;
+        }
+        
+        async function addEmployee() {
+            const name = document.getElementById('emp-name').value.trim();
+            const email = document.getElementById('emp-email').value.trim();
+            
+            if (!name || !email) {
+                alert('Vul naam en email in');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/employees`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(`Werknemer toegevoegd!\nCode: ${data.employee.referralCode}\nWachtwoord: ${data.employee.tempPassword}`);
+                    document.getElementById('emp-name').value = '';
+                    document.getElementById('emp-email').value = '';
+                    loadData();
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Fout bij toevoegen');
+                }
+            } catch (err) {
+                alert('Netwerkfout');
+            }
+        }
+        
+        function renderEmployees() {
+            const list = document.getElementById('employees-list');
+            if (employees.length === 0) {
+                list.innerHTML = '<p style="color: #999;">Geen werknemers gevonden.</p>';
+                return;
+            }
+            
+            list.innerHTML = employees.map(emp => `
+                <div class="employee-item">
+                    <div class="employee-details">
+                        <div class="employee-name">${emp.name}</div>
+                        <div class="employee-meta">${emp.email} • Code: ${emp.referralCode || 'N/A'}</div>
+                    </div>
+                    <div class="employee-actions">
+                        <button class="secondary" onclick="viewEmployee('${emp.id || emp._id}')">Bekijk</button>
+                        <button class="danger" onclick="deleteEmployee('${emp.id || emp._id}')">Verwijder</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function deleteEmployee(id) {
+            if (!confirm('Weet je zeker dat je deze werknemer wilt verwijderen?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/employees/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    loadData();
+                }
+            } catch (err) {
+                alert('Fout bij verwijderen');
+            }
+        }
+        
+        function viewEmployee(id) {
+            const emp = employees.find(e => (e.id || e._id) === id);
+            if (emp) {
+                alert(`Naam: ${emp.name}\nEmail: ${emp.email}\nCode: ${emp.referralCode}\nVakanties: ${emp.vacations?.length || 0}`);
+            }
+        }
+        
+        async function addProject() {
+            const name = document.getElementById('project-name-input').value.trim();
+            
+            if (!name) {
+                alert('Vul projectnaam in');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/projects`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name })
+                });
+                
+                if (res.ok) {
+                    document.getElementById('project-name-input').value = '';
+                    loadData();
+                }
+            } catch (err) {
+                alert('Fout bij toevoegen');
+            }
+        }
+        
+        function renderProjects() {
+            const list = document.getElementById('projects-list');
+            if (projects.length === 0) {
+                list.innerHTML = '<p style="color: #999;">Geen projecten gevonden.</p>';
+                return;
+            }
+            
+            list.innerHTML = projects.map(proj => `
+                <div class="project-item">
+                    <div class="project-header">
+                        <span class="project-name">${proj.name}</span>
+                        <button class="danger" onclick="deleteProject('${proj.id || proj._id}')" style="padding: 4px 8px; font-size: 12px;">Verwijder</button>
+                    </div>
+                    <div class="favorite-section">
+                        <strong style="font-size: 13px;">Favoriete werknemers:</strong>
+                        ${employees.map(emp => {
+                            const isFav = proj.favoriteEmployees?.some(f => (f.employeeId?.id || f.employeeId?._id || f.employeeId) === (emp.id || emp._id));
+                            return `
+                                <div class="favorite-employee">
+                                    <input type="checkbox" ${isFav ? 'checked' : ''} onchange="toggleFavorite('${proj.id || proj._id}', '${emp.id || emp._id}', this.checked)">
+                                    <span>${emp.name}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function deleteProject(id) {
+            if (!confirm('Project verwijderen?')) return;
+            
+            try {
+                await fetch(`${API_URL}/projects/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadData();
+            } catch (err) {
+                alert('Fout');
+            }
+        }
+        
+        async function toggleFavorite(projectId, employeeId, isChecked) {
+            try {
+                if (isChecked) {
+                    await fetch(`${API_URL}/projects/${projectId}/favorites`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ employeeId, priority: 50 })
+                    });
+                } else {
+                    await fetch(`${API_URL}/projects/${projectId}/favorites/${employeeId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                }
+                loadData();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        
+        async function generateSchedule() {
+            try {
+                const res = await fetch(`${API_URL}/schedule/generate`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    renderSchedule(data.schedule);
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Kan planning niet genereren');
+                }
+            } catch (err) {
+                alert('Netwerkfout');
+            }
+        }
+        
+        function renderSchedule(schedule) {
+            const output = document.getElementById('schedule-output');
+            if (!schedule || schedule.length === 0) {
+                output.innerHTML = '<p style="color: #999;">Geen planning beschikbaar. Voeg werknemers en projecten toe.</p>';
+                return;
+            }
+            
+            output.innerHTML = schedule.map(item => `
+                <div class="schedule-item">
+                    <div class="schedule-project">${item.project?.name || 'Project'}</div>
+                    <div class="schedule-employee">👤 ${item.employee?.name || 'Werknemer'} • Week ${item.week}</div>
+                </div>
+            `).join('');
+        }
+        
+        async function saveSettings() {
+            const maxHours = document.getElementById('max-hours').value;
+            const minRest = document.getElementById('min-rest').value;
+            
+            try {
+                const res = await fetch(`${API_URL}/companies/settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ maxHours: parseInt(maxHours), minRest: parseInt(minRest) })
+                });
+                
+                if (res.ok) {
+                    alert('Instellingen opgeslagen!');
+                }
+            } catch (err) {
+                alert('Fout bij opslaan');
+            }
+        }
+        
+        function handleCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const lines = e.target.result.split('\n');
+                for (const line of lines) {
+                    const [name, email] = line.split(',').map(s => s.trim());
+                    if (name && email) {
+                        try {
+                            await fetch(`${API_URL}/employees`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ name, email })
+                            });
+                        } catch (err) {}
+                    }
+                }
+                loadData();
+                alert('CSV import voltooid!');
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
