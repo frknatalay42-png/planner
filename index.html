@@ -113,6 +113,7 @@
             alert('⚠️ Voeg eerst werknemers en projecten toe!');
             return;
         }
+        // --- Schedule generation logic (unchanged) ---
         const maxHours = window.settings.maxHours || 40;
         const minRest = window.settings.minRest || 12;
         const hoursPerAssignment = 8;
@@ -167,6 +168,7 @@
                 }
             });
         });
+        // Only render the calendar, do not output any text or table
         const output = document.getElementById('schedule-output');
         if (output) output.innerHTML = '';
         renderCalendar(schedule);
@@ -254,19 +256,19 @@
         if (!list) return;
         if (!window.employees) window.employees = [];
         list.innerHTML = window.employees.map(emp => `
-            <div class="employee-row">
-                <div class="employee-info">
-                    <div>
-                        <div class="employee-name">${escapeHtml(emp.name)}</div>
-                        <div class="employee-meta">${escapeHtml(emp.email)}</div>
-                        <div class="employee-meta">Code: ${escapeHtml(emp.referralCode)}</div>
-                    </div>
-                </div>
-                <div class="employee-actions">
-                    <button class="secondary" style="margin:0;" onclick="removeEmployee('${emp.id}')">Verwijder</button>
-                    <button class="secondary" style="margin:0;" onclick="shareLogin('${emp.referralCode}','${emp.tempPassword}')">Deel Login</button>
-                </div>
-            </div>
+            &lt;div class="employee-row"&gt;
+                &lt;div class="employee-info"&gt;
+                    &lt;div&gt;
+                        &lt;div class="employee-name"&gt;${escapeHtml(emp.name)}&lt;/div&gt;
+                        &lt;div class="employee-meta"&gt;${escapeHtml(emp.email)}&lt;/div&gt;
+                        &lt;div class="employee-meta"&gt;Code: ${escapeHtml(emp.referralCode)}&lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div class="employee-actions"&gt;
+                    &lt;button class="secondary" style="margin:0;" onclick="removeEmployee('${emp.id}')"&gt;Verwijder&lt;/button&gt;
+                    &lt;button class="secondary" style="margin:0;" onclick="shareLogin('${emp.referralCode}','${emp.tempPassword}')"&gt;Deel Login&lt;/button&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
         `).join('');
     }
 
@@ -346,23 +348,23 @@
                 const priority = isFav ? isFav.priority : 50;
                 const disabled = isFav ? '' : 'disabled';
                 return `
-                    <div style="display:flex; align-items:center; gap:8px; margin:6px 0;">
-                        <label style="display:flex; align-items:center; gap:8px;">
-                            <input type="checkbox" ${checked} onchange="toggleFavorite('${project.id}','${emp.id}', this.checked)">
-                            <span>${escapeHtml(emp.name)}</span>
-                        </label>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <input type="range" min="0" max="100" value="${priority}" ${disabled} onchange="updatePriority('${project.id}','${emp.id}', this.value)">
-                            <span class="priority-value">${isFav ? isFav.priority : 0}%</span>
-                        </div>
-                    </div>
+                    &lt;div style="display:flex; align-items:center; gap:8px; margin:6px 0;"&gt;
+                        &lt;label style="display:flex; align-items:center; gap:8px;"&gt;
+                            &lt;input type="checkbox" ${checked} onchange="toggleFavorite('${project.id}','${emp.id}', this.checked)"&gt;
+                            &lt;span&gt;${escapeHtml(emp.name)}&lt;/span&gt;
+                        &lt;/label&gt;
+                        &lt;div style="display:flex; align-items:center; gap:8px;"&gt;
+                            &lt;input type="range" min="0" max="100" value="${priority}" ${disabled} onchange="updatePriority('${project.id}','${emp.id}', this.value)"&gt;
+                            &lt;span class="priority-value"&gt;${isFav ? isFav.priority : 0}%&lt;/span&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
                 `;
-            }).join('') : '<p style="color:#666; font-style:italic; margin-top:10px;">⚠️ Voeg eerst werknemers toe om favorieten toe te wijzen.</p>';
+            }).join('') : '&lt;p style="color:#666; font-style:italic; margin-top:10px;"&gt;&#9888; Voeg eerst werknemers toe om favorieten toe te wijzen.&lt;/p&gt;';
             return `
-                <div class="project-card card" style="margin-bottom:12px;">
-                    <div class="project-name" style="font-weight:700;">${escapeHtml(project.name)}</div>
-                    <div style="margin-top:12px;"><strong>Favoriete werknemers (% voorrang):</strong>${favSection}</div>
-                </div>
+                &lt;div class="project-card card" style="margin-bottom:12px;"&gt;
+                    &lt;div class="project-name" style="font-weight:700;"&gt;${escapeHtml(project.name)}&lt;/div&gt;
+                    &lt;div style="margin-top:12px;"&gt;&lt;strong&gt;Favoriete werknemers (% voorrang):&lt;/strong&gt;${favSection}&lt;/div&gt;
+                &lt;/div&gt;
             `;
         }).join('');
     }
@@ -411,14 +413,14 @@
         if (!list) return;
         const vacs = window.vacations || [];
         if (vacs.length === 0) {
-            list.innerHTML = '<p style="color:#666;">Geen vakanties toegevoegd.</p>';
+            list.innerHTML = '&lt;p style="color:#666;"&gt;Geen vakanties toegevoegd.&lt;/p&gt;';
             return;
         }
         list.innerHTML = vacs.map(v => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;">
-                <div><strong>📅 ${formatDate(v.start)}</strong> tot <strong>${formatDate(v.end)}</strong></div>
-                <div><button class="secondary" style="margin:0;" onclick="removeVacation('${v.id}')">Verwijder</button></div>
-            </div>
+            &lt;div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;"&gt;
+                &lt;div&gt;&lt;strong&gt;📅 ${formatDate(v.start)}&lt;/strong&gt; tot &lt;strong&gt;${formatDate(v.end)}&lt;/strong&gt;&lt;/div&gt;
+                &lt;div&gt;&lt;button class="secondary" style="margin:0;" onclick="removeVacation('${v.id}')"&gt;Verwijder&lt;/button&gt;&lt;/div&gt;
+            &lt;/div&gt;
         `).join('');
     }
 
@@ -551,7 +553,7 @@
             minRest: parseInt(document.getElementById('min-rest').value, 10) || 12
         };
         saveCompanyData();
-        alert('✅ Instellingen opgeslagen!');
+        alert('&#x2705; Instellingen opgeslagen!');
     }
 
     /* Small utilities */
