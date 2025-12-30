@@ -1,181 +1,53 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>WorkPlan - Simpel Personeelsplanning</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
+            background:#f5f7fa; color:#333; line-height:1.6;
         }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        .container { max-width:1200px; margin:0 auto; padding:20px; }
+        header { background:#2c3e50; color:white; padding:15px 0; margin-bottom:30px; }
+        .header-content { max-width:1200px; margin:0 auto; padding:0 20px; display:flex; justify-content:space-between; align-items:center; }
+        nav button { background:#3498db; color:white; border:none; padding:8px 16px; margin-left:10px; border-radius:4px; cursor:pointer; font-size:14px; }
+        nav button:hover { background:#2980b9; }
+        .card { background:white; border-radius:8px; padding:20px; box-shadow:0 2px 4px rgba(0,0,0,0.1); margin-bottom:20px; }
+        h1,h2,h3 { margin-bottom:15px; color:#2c3e50; }
+        button { background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-size:14px; transition:background .2s; }
+        button:hover { background:#229954; }
+        button.secondary { background:#95a5a6; }
+        button.secondary:hover { background:#7f8c8d; }
+        input, select, textarea { width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px; margin-bottom:15px; }
+        table { width:100%; border-collapse:collapse; margin-top:15px; }
+        th, td { text-align:left; padding:12px; border-bottom:1px solid #eee; }
+        th { background:#ecf0f1; font-weight:600; }
+        .hidden { display:none; }
+        .employee-row { display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; }
+        .priority-slider { width:100px; }
+        .vacation-day { display:inline-block; background:#e74c3c; color:white; padding:4px 8px; border-radius:4px; margin:2px; font-size:12px; }
+        .csv-upload { border:2px dashed #3498db; padding:30px; text-align:center; border-radius:8px; cursor:pointer; background:#f8f9fa; }
+        .csv-upload:hover { background:#e3f2fd; }
+        @media (max-width:768px) {
+            .container { padding:10px; }
+            table { font-size:12px; }
+            th, td { padding:8px; }
         }
-        
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 15px 0;
-            margin-bottom: 30px;
-        }
-        
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        nav button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            margin-left: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        nav button:hover {
-            background: #2980b9;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        h1, h2, h3 {
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
-        
-        button {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-        
-        button:hover {
-            background: #229954;
-        }
-        
-        button.secondary {
-            background: #95a5a6;
-        }
-        
-        button.secondary:hover {
-            background: #7f8c8d;
-        }
-        
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        
-        th, td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        th {
-            background: #ecf0f1;
-            font-weight: 600;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .employee-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .priority-slider {
-            width: 100px;
-        }
-        
-        .vacation-day {
-            display: inline-block;
-            background: #e74c3c;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin: 2px;
-            font-size: 12px;
-        }
-        
-        .csv-upload {
-            border: 2px dashed #3498db;
-            padding: 30px;
-            text-align: center;
-            border-radius: 8px;
-            cursor: pointer;
-            background: #f8f9fa;
-        }
-        
-        .csv-upload:hover {
-            background: #e3f2fd;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            table {
-                font-size: 12px;
-            }
-            
-            th, td {
-                padding: 8px;
-            }
-        }
+        .schedule-item { padding:10px; border-bottom:1px solid #eee; margin-bottom:8px; }
+        .schedule-project { font-weight:600; margin-bottom:6px; color:#2c3e50; }
+        .schedule-details { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+        .schedule-label { font-weight:600; color:#666; }
+        .schedule-value { margin-left:4px; }
     </style>
 </head>
 <body>
     <header>
         <div class="header-content">
             <h1>WorkPlan</h1>
-            <nav>
+            <nav id="main-nav">
                 <button onclick="showSection('dashboard')">Dashboard</button>
                 <button onclick="showSection('employees')">Werknemers</button>
                 <button onclick="showSection('projects')">Projecten</button>
@@ -191,7 +63,7 @@
             <div class="card">
                 <h2>Planning Overzicht</h2>
                 <button onclick="generateSchedule()">Genereer Automatische Planning</button>
-                <div id="schedule-output" style="margin-top: 20px;"></div>
+                <div id="schedule-output" style="margin-top:20px;"></div>
             </div>
         </div>
 
@@ -203,15 +75,15 @@
                 <input type="text" id="employee-name" placeholder="Naam werknemer">
                 <input type="email" id="employee-email" placeholder="E-mailadres">
                 <button onclick="addEmployee()">Werknemer Toevoegen</button>
-                
-                <h3 style="margin-top: 30px;">CSV Import</h3>
+
+                <h3 style="margin-top:30px;">CSV Import</h3>
                 <div class="csv-upload" onclick="document.getElementById('csv-file').click()">
                     <p>Klik hier om CSV bestand te uploaden</p>
-                    <p style="font-size: 12px; color: #666;">Format: naam, email</p>
+                    <p style="font-size:12px;color:#666;">Format: naam, email</p>
                 </div>
-                <input type="file" id="csv-file" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
-                
-                <h3 style="margin-top: 30px;">Werknemers Lijst</h3>
+                <input type="file" id="csv-file" accept=".csv" style="display:none;" onchange="handleCSVUpload(event)">
+
+                <h3 style="margin-top:30px;">Werknemers Lijst</h3>
                 <div id="employees-list"></div>
             </div>
         </div>
@@ -223,8 +95,8 @@
                 <h3>Nieuw Project</h3>
                 <input type="text" id="project-name" placeholder="Project naam">
                 <button onclick="addProject()">Project Toevoegen</button>
-                
-                <h3 style="margin-top: 30px;">Bestaande Projecten</h3>
+
+                <h3 style="margin-top:30px;">Bestaande Projecten</h3>
                 <div id="projects-list"></div>
             </div>
         </div>
@@ -237,8 +109,8 @@
                 <input type="date" id="vacation-start">
                 <input type="date" id="vacation-end">
                 <button onclick="addVacation()">Vakantie Toevoegen</button>
-                
-                <h3 style="margin-top: 20px;">Mijn Vakanties</h3>
+
+                <h3 style="margin-top:20px;">Mijn Vakanties</h3>
                 <div id="vacation-list"></div>
             </div>
         </div>
@@ -248,18 +120,386 @@
             <div class="card">
                 <h2>Planning Instellingen</h2>
                 <label>
-                    Max uren per week: 
-                    <input type="number" id="max-hours" value="40" style="width: 100px;">
+                    Max uren per week:
+                    <input type="number" id="max-hours" value="40" style="width:100px;">
                 </label>
                 <label>
-                    Min rust tussen diensten (uur): 
-                    <input type="number" id="min-rest" value="12" style="width: 100px;">
+                    Min rust tussen diensten (uur):
+                    <input type="number" id="min-rest" value="12" style="width:100px;">
                 </label>
                 <button onclick="saveSettings()">Instellingen Opslaan</button>
             </div>
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <script>
+    /***********************
+     * Minimal, working script
+     ***********************/
+    // Demo initial data
+    const DEMO = {
+        employees: [
+            { id: 'emp1', name: 'Jan Werknemer', email: 'jan@demo.nl', referralCode: 'WORK001', tempPassword: 'werk123', vacations: [] },
+            { id: 'emp2', name: 'Marie Medewerker', email: 'marie@demo.nl', referralCode: 'WORK002', tempPassword: 'werk123', vacations: [] }
+        ],
+        projects: [
+            { id: 'proj1', name: 'Website Redesign', favoriteEmployees: [] },
+            { id: 'proj2', name: 'App Development', favoriteEmployees: [] }
+        ],
+        settings: { maxHours: 40, minRest: 12 }
+    };
+
+    // App state (safe defaults so UI functions won't crash)
+    window.employees = [];
+    window.projects = [];
+    window.vacations = [];
+    window.settings = { maxHours: 40, minRest: 12 };
+
+    function saveCompanyData() {
+        const payload = {
+            employees: window.employees,
+            projects: window.projects,
+            settings: window.settings
+        };
+        try {
+            localStorage.setItem('workplan_data', JSON.stringify(payload));
+        } catch (e) {
+            console.warn('Could not save to localStorage', e);
+        }
+    }
+
+    function loadCompanyData() {
+        try {
+            const saved = localStorage.getItem('workplan_data');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                window.employees = parsed.employees || [];
+                window.projects = parsed.projects || [];
+                window.settings = parsed.settings || { maxHours: 40, minRest: 12 };
+            } else {
+                // first run: populate demo
+                window.employees = JSON.parse(JSON.stringify(DEMO.employees));
+                window.projects = JSON.parse(JSON.stringify(DEMO.projects));
+                window.settings = Object.assign({}, DEMO.settings);
+                saveCompanyData();
+            }
+        } catch (e) {
+            console.error('Error loading data, using demo', e);
+            window.employees = JSON.parse(JSON.stringify(DEMO.employees));
+            window.projects = JSON.parse(JSON.stringify(DEMO.projects));
+            window.settings = Object.assign({}, DEMO.settings);
+        }
+    }
+
+    /* UI helpers */
+    function showSection(sectionId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+        const el = document.getElementById(sectionId);
+        if (el) el.classList.remove('hidden');
+
+        if (sectionId === 'employees') updateEmployeesList();
+        if (sectionId === 'projects') updateProjectsList();
+        if (sectionId === 'vacation') updateVacationList();
+    }
+
+    /* Employees */
+    function addEmployee() {
+        const name = document.getElementById('employee-name').value.trim();
+        const email = document.getElementById('employee-email').value.trim();
+        if (!name || !email) { alert('⚠️ Vul alle velden in'); return; }
+
+        const employee = {
+            id: Date.now().toString(),
+            name,
+            email,
+            referralCode: Math.random().toString(36).substring(2,8).toUpperCase(),
+            tempPassword: Math.random().toString(36).substring(2,10),
+            vacations: []
+        };
+        window.employees.push(employee);
+        document.getElementById('employee-name').value = '';
+        document.getElementById('employee-email').value = '';
+        updateEmployeesList();
+        updateProjectsList();
+        saveCompanyData();
+
+        setTimeout(() => {
+            alert(`✅ Werknemer toegevoegd!\n\nInloggegevens voor ${employee.name}:\nCode: ${employee.referralCode}\nWachtwoord: ${employee.tempPassword}`);
+        }, 50);
+    }
+
+    function updateEmployeesList() {
+        const list = document.getElementById('employees-list');
+        if (!list) return;
+        if (!window.employees) window.employees = [];
+        list.innerHTML = window.employees.map(emp => `
+            <div class="employee-row">
+                <div class="employee-info">
+                    <div>
+                        <div class="employee-name">${escapeHtml(emp.name)}</div>
+                        <div class="employee-meta">${escapeHtml(emp.email)}</div>
+                        <div class="employee-meta">Code: ${escapeHtml(emp.referralCode)}</div>
+                    </div>
+                </div>
+                <div class="employee-actions">
+                    <button class="secondary" style="margin:0;" onclick="removeEmployee('${emp.id}')">Verwijder</button>
+                    <button class="secondary" style="margin:0;" onclick="shareLogin('${emp.referralCode}','${emp.tempPassword}')">Deel Login</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function removeEmployee(id) {
+        if (!confirm('⚠️ Weet je zeker dat je deze werknemer wilt verwijderen?')) return;
+        window.employees = window.employees.filter(e => e.id !== id);
+        // also remove from favorite lists
+        window.projects.forEach(p => {
+            p.favoriteEmployees = (p.favoriteEmployees || []).filter(f => f.id !== id);
+        });
+        updateEmployeesList();
+        updateProjectsList();
+        saveCompanyData();
+    }
+
+    function shareLogin(code, password) {
+        if (navigator.share) {
+            navigator.share({ title: 'WorkPlan Inloggegevens', text: `Code: ${code}\nWachtwoord: ${password}` });
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(`Code: ${code}\nWachtwoord: ${password}`).then(() => {
+                alert('📋 Inloggegevens gekopieerd naar klembord!');
+            }).catch(()=>{ alert(`Code: ${code}\nWachtwoord: ${password}`); });
+        } else {
+            alert(`Code: ${code}\nWachtwoord: ${password}`);
+        }
+    }
+
+    function handleCSVUpload(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const lines = e.target.result.split(/\r?\n/);
+            let added = 0;
+            lines.forEach(line => {
+                if (!line) return;
+                const parts = line.split(',');
+                const name = (parts[0]||'').trim();
+                const email = (parts[1]||'').trim();
+                if (name && email) {
+                    window.employees.push({
+                        id: (Date.now()+Math.random()).toString(),
+                        name, email,
+                        referralCode: Math.random().toString(36).substring(2,8).toUpperCase(),
+                        tempPassword: Math.random().toString(36).substring(2,10),
+                        vacations: []
+                    });
+                    added++;
+                }
+            });
+            saveCompanyData();
+            updateEmployeesList();
+            updateProjectsList();
+            alert(`✅ CSV geïmporteerd! ${added} werknemers toegevoegd.`);
+        };
+        reader.readAsText(file);
+    }
+
+    /* Projects */
+    function addProject() {
+        const name = document.getElementById('project-name').value.trim();
+        if (!name) return;
+        window.projects.push({ id: Date.now().toString(), name, favoriteEmployees: [] });
+        document.getElementById('project-name').value = '';
+        updateProjectsList();
+        saveCompanyData();
+    }
+
+    function updateProjectsList() {
+        const list = document.getElementById('projects-list');
+        if (!list) return;
+        if (!window.projects) window.projects = [];
+        list.innerHTML = window.projects.map(project => {
+            const favSection = (window.employees && window.employees.length > 0) ? window.employees.map(emp => {
+                const isFav = (project.favoriteEmployees || []).find(f => f.id === emp.id);
+                const checked = isFav ? 'checked' : '';
+                const priority = isFav ? isFav.priority : 50;
+                const disabled = isFav ? '' : 'disabled';
+                return `
+                    <div style="display:flex; align-items:center; gap:8px; margin:6px 0;">
+                        <label style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" ${checked} onchange="toggleFavorite('${project.id}','${emp.id}', this.checked)">
+                            <span>${escapeHtml(emp.name)}</span>
+                        </label>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="range" min="0" max="100" value="${priority}" ${disabled} onchange="updatePriority('${project.id}','${emp.id}', this.value)">
+                            <span class="priority-value">${isFav ? isFav.priority : 0}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('') : '<p style="color:#666; font-style:italic; margin-top:10px;">⚠️ Voeg eerst werknemers toe om favorieten toe te wijzen.</p>';
+            return `
+                <div class="project-card card" style="margin-bottom:12px;">
+                    <div class="project-name" style="font-weight:700;">${escapeHtml(project.name)}</div>
+                    <div style="margin-top:12px;"><strong>Favoriete werknemers (% voorrang):</strong>${favSection}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleFavorite(projectId, employeeId, checked) {
+        const project = window.projects.find(p => p.id === projectId);
+        if (!project) return;
+        project.favoriteEmployees = project.favoriteEmployees || [];
+        const existing = project.favoriteEmployees.find(f => f.id === employeeId);
+        if (checked && !existing) {
+            project.favoriteEmployees.push({ id: employeeId, priority: 50 });
+        } else if (!checked && existing) {
+            project.favoriteEmployees = project.favoriteEmployees.filter(f => f.id !== employeeId);
+        }
+        updateProjectsList();
+        saveCompanyData();
+    }
+
+    function updatePriority(projectId, employeeId, value) {
+        const project = window.projects.find(p => p.id === projectId);
+        if (!project) return;
+        const fav = (project.favoriteEmployees || []).find(f => f.id === employeeId);
+        if (fav) {
+            fav.priority = parseInt(value, 10);
+            updateProjectsList();
+            saveCompanyData();
+        }
+    }
+
+    /* Vacation */
+    function addVacation() {
+        const start = document.getElementById('vacation-start').value;
+        const end = document.getElementById('vacation-end').value;
+        if (!start || !end) { alert('⚠️ Selecteer start en eind datum'); return; }
+        if (new Date(start) > new Date(end)) { alert('⚠️ Startdatum moet voor einddatum liggen'); return; }
+        // for simplicity: add vacation to a global list (you can adapt per-employee)
+        window.vacations.push({ id: Date.now().toString(), start, end });
+        document.getElementById('vacation-start').value = '';
+        document.getElementById('vacation-end').value = '';
+        updateVacationList();
+        saveCompanyData();
+    }
+
+    function updateVacationList() {
+        const list = document.getElementById('vacation-list');
+        if (!list) return;
+        const vacs = window.vacations || [];
+        if (vacs.length === 0) {
+            list.innerHTML = '<p style="color:#666;">Geen vakanties toegevoegd.</p>';
+            return;
+        }
+        list.innerHTML = vacs.map(v => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;">
+                <div><strong>📅 ${formatDate(v.start)}</strong> tot <strong>${formatDate(v.end)}</strong></div>
+                <div><button class="secondary" style="margin:0;" onclick="removeVacation('${v.id}')">Verwijder</button></div>
+            </div>
+        `).join('');
+    }
+
+    function removeVacation(id) {
+        if (!confirm('⚠️ Deze vakantie verwijderen?')) return;
+        window.vacations = (window.vacations||[]).filter(v => v.id !== id);
+        updateVacationList();
+        saveCompanyData();
+    }
+
+    /* Schedule generation (simple) */
+    function generateSchedule() {
+        if (!window.employees || window.employees.length === 0 || !window.projects || window.projects.length === 0) {
+            alert('⚠️ Voeg eerst werknemers en projecten toe!');
+            return;
+        }
+        const output = document.getElementById('schedule-output');
+        let html = '<div style="margin-bottom:12px; color:green;">✅ Planning gegenereerd!</div>';
+        html += '<div class="schedule-list">';
+        window.projects.forEach(project => {
+            // available employees = those not on vacation for today (simple check against global vacations)
+            const today = new Date().toISOString().split('T')[0];
+            const availableEmployees = window.employees.filter(emp => {
+                // check if employee has personal vacations (we didn't store per-employee by default)
+                // fallback: all employees are available
+                return true;
+            });
+
+            const sorted = availableEmployees.slice().sort((a,b)=>{
+                const aFav = (project.favoriteEmployees||[]).find(f=>f.id===a.id);
+                const bFav = (project.favoriteEmployees||[]).find(f=>f.id===b.id);
+                return (bFav?.priority||0) - (aFav?.priority||0);
+            });
+
+            sorted.slice(0,3).forEach((emp, idx) => {
+                const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
+                html += `
+                    <div class="schedule-item">
+                        <div class="schedule-project">${escapeHtml(project.name)}</div>
+                        <div class="schedule-details">
+                            <span class="schedule-label">Werknemer:</span><span class="schedule-value">${escapeHtml(emp.name)}</span>
+                            <span class="schedule-label">Plek:</span><span class="schedule-value">${idx+1}</span>
+                            <span class="schedule-label">Prioriteit:</span><span class="schedule-value">${fav ? fav.priority+'%' : '0%'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+        html += '</div>';
+
+        // table
+        html += '<table style="margin-top:12px;"><tr><th>Project</th><th>Werknemer</th><th>Week/Plek</th><th>%</th></tr>';
+        window.projects.forEach(project => {
+            const availableEmployees = window.employees.slice();
+            const sorted = availableEmployees.slice().sort((a,b)=>{
+                const aFav = (project.favoriteEmployees||[]).find(f=>f.id===a.id);
+                const bFav = (project.favoriteEmployees||[]).find(f=>f.id===b.id);
+                return (bFav?.priority||0) - (aFav?.priority||0);
+            });
+            sorted.slice(0,3).forEach((emp, idx) => {
+                const fav = (project.favoriteEmployees||[]).find(f=>f.id===emp.id);
+                html += `<tr><td>${escapeHtml(project.name)}</td><td>${escapeHtml(emp.name)}</td><td>Week ${idx+1}</td><td>${fav ? fav.priority+'%' : '0%'}</td></tr>`;
+            });
+        });
+        html += '</table>';
+        output.innerHTML = html;
+    }
+
+    /* Settings */
+    function saveSettings() {
+        window.settings = {
+            maxHours: parseInt(document.getElementById('max-hours').value, 10) || 40,
+            minRest: parseInt(document.getElementById('min-rest').value, 10) || 12
+        };
+        saveCompanyData();
+        alert('✅ Instellingen opgeslagen!');
+    }
+
+    /* Small utilities */
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const d = new Date(dateString);
+        return d.toLocaleDateString('nl-NL', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/[&<>"']/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+    }
+
+    // On load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCompanyData();
+        // fill initial lists
+        document.getElementById('max-hours').value = window.settings.maxHours || 40;
+        document.getElementById('min-rest').value = window.settings.minRest || 12;
+        updateEmployeesList();
+        updateProjectsList();
+        updateVacationList();
+        showSection('dashboard');
+        // wire csv click fallback: already handled by csv-upload div
+    });
+    </script>
 </body>
 </html>
