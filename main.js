@@ -1,3 +1,10 @@
+// Handle GitHub Pages SPA routing
+if (sessionStorage.redirect) {
+    const redirect = sessionStorage.redirect;
+    delete sessionStorage.redirect;
+    window.location.replace(redirect);
+}
+
 // main.js
 // All shared logic for WorkPlan app
 
@@ -173,7 +180,7 @@ function localLogin(username, password) {
                 email: company.adminEmail
             }));
             localStorage.setItem('token', 'local-' + Date.now());
-            window.location.href = 'admin.html';
+            showApp();
         } else {
             showError('login-error', 'Ongeldige bedrijfscode of wachtwoord');
         }
@@ -200,7 +207,7 @@ function localLogin(username, password) {
                 }));
                 localStorage.setItem('token', 'local-' + Date.now());
                 found = true;
-                window.location.href = 'employee.html';
+                showApp();
                 break;
             }
         }
