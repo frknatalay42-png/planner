@@ -502,6 +502,7 @@
         let userData = JSON.parse(localStorage.getItem('userData') || '{}');
         let employees = [];
         let projects = [];
+        let isLocalMode = token && token.startsWith('local-');
         
         // Check auth
         if (!token || userData.type !== 'company') {
@@ -528,21 +529,41 @@
         }
         
         async function loadData() {
-            try {
-                const res = await fetch(`${API_URL}/companies`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    employees = data.employees || [];
-                    projects = data.projects || [];
-                    updateStats();
-                    renderEmployees();
-                    renderProjects();
+            // Try API first
+            if (!isLocalMode) {
+                try {
+                    const res = await fetch(`${API_URL}/companies`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        employees = data.employees || [];
+                        projects = data.projects || [];
+                        updateStats();
+                        renderEmployees();
+                        renderProjects();
+                        return;
+                    }
+                } catch (err) {
+                    console.log('API not available, using local data');
+                    isLocalMode = true;
                 }
-            } catch (err) {
-                console.error('Load error:', err);
             }
+            
+            // Fallback to localStorage
+            const localData = JSON.parse(localStorage.getItem('companyData_' + userData.code) || '{}');
+            employees = localData.employees || [];
+            projects = localData.projects || [];
+            updateStats();
+            renderEmployees();
+            renderProjects();
+        }
+        
+        function saveLocalData() {
+            localStorage.setItem('companyData_' + userData.code, JSON.stringify({
+                employees,
+                projects
+            }));
         }
         
         function updateStats() {
@@ -558,6 +579,29 @@
             
             if (!name || !email) {
                 alert('Vul naam en email in');
+                return;
+            }
+            
+            if (isLocalMode) {
+                // Local mode - generate codes locally
+                const referralCode = 'EMP' + Math.random().toString(36).substring(2, 6).toUpperCase();
+                const tempPassword = Math.random().toString(36).substring(2, 10);
+                
+                employees.push({
+                    id: 'emp_' + Date.now(),
+                    name,
+                    email,
+                    referralCode,
+                    tempPassword,
+                    vacations: []
+                });
+                
+                saveLocalData();
+                alert(`Werknemer toegevoegd!\nCode: ${referralCode}\nWachtwoord: ${tempPassword}`);
+                document.getElementById('emp-name').value = '';
+                document.getElementById('emp-email').value = '';
+                renderEmployees();
+                updateStats();
                 return;
             }
             
@@ -610,6 +654,14 @@
         async function deleteEmployee(id) {
             if (!confirm('Weet je zeker dat je deze werknemer wilt verwijderen?')) return;
             
+            if (isLocalMode) {
+                employees = employees.filter(e => e.id !== id);
+                saveLocalData();
+                renderEmployees();
+                updateStats();
+                return;
+            }
+            
             try {
                 const res = await fetch(`${API_URL}/employees/${id}`, {
                     method: 'DELETE',
@@ -626,7 +678,7 @@
         function viewEmployee(id) {
             const emp = employees.find(e => (e.id || e._id) === id);
             if (emp) {
-                alert(`Naam: ${emp.name}\nEmail: ${emp.email}\nCode: ${emp.referralCode}\nVakanties: ${emp.vacations?.length || 0}`);
+                alert(`Naam: ${emp.name}\nEmail: ${emp.email}\nCode: ${emp.referralCode}\nWachtwoord: ${emp.tempPassword || 'N/A'}\nVakanties: ${emp.vacations?.length || 0}`);
             }
         }
         
@@ -635,6 +687,19 @@
             
             if (!name) {
                 alert('Vul projectnaam in');
+                return;
+            }
+            
+            if (isLocalMode) {
+                const newProj = {
+                    id: 'proj_' + Date.now(),
+                    name: name,
+                    favoriteEmployees: []
+                };
+                projects.push(newProj);
+                localStorage.setItem('local_projects', JSON.stringify(projects));
+                document.getElementById('project-name-input').value = '';
+                renderProjects();
                 return;
             }
             
@@ -689,6 +754,13 @@
         async function deleteProject(id) {
             if (!confirm('Project verwijderen?')) return;
             
+            if (isLocalMode) {
+                projects = projects.filter(p => (p.id || p._id) !== id);
+                localStorage.setItem('local_projects', JSON.stringify(projects));
+                renderProjects();
+                return;
+            }
+            
             try {
                 await fetch(`${API_URL}/projects/${id}`, {
                     method: 'DELETE',
@@ -701,6 +773,21 @@
         }
         
         async function toggleFavorite(projectId, employeeId, isChecked) {
+            if (isLocalMode) {
+                const proj = projects.find(p => (p.id || p._id) === projectId);
+                if (proj) {
+                    if (!proj.favoriteEmployees) proj.favoriteEmployees = [];
+                    if (isChecked) {
+                        proj.favoriteEmployees.push({ employeeId: employeeId, priority: 50 });
+                    } else {
+                        proj.favoriteEmployees = proj.favoriteEmployees.filter(f => (f.employeeId?.id || f.employeeId?._id || f.employeeId) !== employeeId);
+                    }
+                    localStorage.setItem('local_projects', JSON.stringify(projects));
+                    renderProjects();
+                }
+                return;
+            }
+            
             try {
                 if (isChecked) {
                     await fetch(`${API_URL}/projects/${projectId}/favorites`, {
@@ -724,6 +811,25 @@
         }
         
         async function generateSchedule() {
+            if (isLocalMode) {
+                // Generate simple local schedule
+                const schedule = [];
+                const weeks = [1, 2, 3, 4];
+                projects.forEach((proj, idx) => {
+                    if (employees.length > 0) {
+                        const emp = employees[idx % employees.length];
+                        schedule.push({
+                            project: proj,
+                            employee: emp,
+                            week: weeks[idx % weeks.length]
+                        });
+                    }
+                });
+                localStorage.setItem('local_schedule', JSON.stringify(schedule));
+                renderSchedule(schedule);
+                return;
+            }
+            
             try {
                 const res = await fetch(`${API_URL}/schedule/generate`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -760,6 +866,12 @@
             const maxHours = document.getElementById('max-hours').value;
             const minRest = document.getElementById('min-rest').value;
             
+            if (isLocalMode) {
+                localStorage.setItem('local_settings', JSON.stringify({ maxHours: parseInt(maxHours), minRest: parseInt(minRest) }));
+                alert('Instellingen opgeslagen!');
+                return;
+            }
+            
             try {
                 const res = await fetch(`${API_URL}/companies/settings`, {
                     method: 'PUT',
@@ -785,6 +897,27 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 const lines = e.target.result.split('\n');
+                
+                if (isLocalMode) {
+                    for (const line of lines) {
+                        const [name, email] = line.split(',').map(s => s.trim());
+                        if (name && email) {
+                            const code = 'EMP' + Math.random().toString(36).substr(2, 5).toUpperCase();
+                            employees.push({
+                                id: 'emp_' + Date.now() + Math.random(),
+                                name: name,
+                                email: email,
+                                referralCode: code,
+                                tempPassword: 'temp123'
+                            });
+                        }
+                    }
+                    localStorage.setItem('local_employees', JSON.stringify(employees));
+                    renderEmployees();
+                    alert('CSV import voltooid!');
+                    return;
+                }
+                
                 for (const line of lines) {
                     const [name, email] = line.split(',').map(s => s.trim());
                     if (name && email) {

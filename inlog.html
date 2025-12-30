@@ -469,8 +469,8 @@
                 <h2>Inloggen</h2>
                 
                 <div class="login-type-selector">
-                    <button class="login-type-btn active" onclick="selectLoginType('company')">Bedrijf</button>
-                    <button class="login-type-btn" onclick="selectLoginType('employee')">Werknemer</button>
+                    <button class="login-type-btn active" id="btn-company" onclick="selectLoginType('company', this)">Bedrijf</button>
+                    <button class="login-type-btn" id="btn-employee" onclick="selectLoginType('employee', this)">Werknemer</button>
                 </div>
                 
                 <div id="login-form">
@@ -622,10 +622,47 @@
 
     <script>
         // Data storage
-        const companyData = {};
+        const companyData = {
+            // Demo admin account
+            'DEMO123': {
+                name: 'Demo Bedrijf',
+                email: 'admin@demo.nl',
+                password: 'demo123',
+                adminEmail: 'admin@demo.nl',
+                employees: [
+                    {
+                        id: 'emp1',
+                        name: 'Jan Werknemer',
+                        email: 'jan@demo.nl',
+                        referralCode: 'WORK001',
+                        tempPassword: 'werk123',
+                        vacations: []
+                    },
+                    {
+                        id: 'emp2',
+                        name: 'Marie Medewerker',
+                        email: 'marie@demo.nl',
+                        referralCode: 'WORK002',
+                        tempPassword: 'werk123',
+                        vacations: []
+                    }
+                ],
+                projects: [
+                    { id: 'proj1', name: 'Website Redesign', favoriteEmployees: [] },
+                    { id: 'proj2', name: 'App Development', favoriteEmployees: [] }
+                ],
+                settings: { maxHours: 40, minRest: 12 }
+            }
+        };
         let currentUser = null;
         let loginType = 'company';
         let menuOpen = false;
+        
+        // Show demo credentials hint
+        console.log('=== DEMO ACCOUNTS ===');
+        console.log('Admin: Code=DEMO123, Wachtwoord=demo123');
+        console.log('Werknemer: Code=WORK001, Wachtwoord=werk123');
+        console.log('=====================');
 
         // Navigation
         function toggleMenu() {
@@ -652,12 +689,12 @@
         }
 
         // Login functions
-        function selectLoginType(type) {
+        function selectLoginType(type, btn) {
             loginType = type;
-            document.querySelectorAll('.login-type-btn').forEach(btn => {
-                btn.classList.remove('active');
+            document.querySelectorAll('.login-type-btn').forEach(b => {
+                b.classList.remove('active');
             });
-            event.target.classList.add('active');
+            if (btn) btn.classList.add('active');
             
             const label = document.getElementById('login-username-label');
             const input = document.getElementById('login-username');

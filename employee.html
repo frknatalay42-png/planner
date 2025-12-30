@@ -537,6 +537,63 @@
         document.getElementById('edit-name').value = userData.name || '';
         
         loadVacations();
+        loadMySchedule();
+        
+        async function loadMySchedule() {
+            const scheduleDiv = document.getElementById('my-schedule');
+            
+            // Local mode - load from localStorage
+            if (isLocalMode) {
+                const schedule = JSON.parse(localStorage.getItem('local_schedule') || '[]');
+                const mySchedule = schedule.filter(s => 
+                    (s.employee?.id || s.employee?._id) === userData.id ||
+                    s.employee?.name === userData.name
+                );
+                
+                if (mySchedule.length === 0) {
+                    scheduleDiv.innerHTML = '<p style="color: #999;">Geen planning beschikbaar.</p>';
+                    return;
+                }
+                
+                scheduleDiv.innerHTML = mySchedule.map(item => `
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+                        <strong style="color: #2c3e50;">${item.project?.name || 'Project'}</strong>
+                        <div style="font-size: 13px; color: #666; margin-top: 4px;">📅 Week ${item.week}</div>
+                    </div>
+                `).join('');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/schedule`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    const mySchedule = (data.schedule || []).filter(s =>
+                        (s.employee?.id || s.employee?._id) === userData.id
+                    );
+                    
+                    if (mySchedule.length === 0) {
+                        scheduleDiv.innerHTML = '<p style="color: #999;">Geen planning beschikbaar.</p>';
+                        return;
+                    }
+                    
+                    scheduleDiv.innerHTML = mySchedule.map(item => `
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+                            <strong style="color: #2c3e50;">${item.project?.name || 'Project'}</strong>
+                            <div style="font-size: 13px; color: #666; margin-top: 4px;">📅 Week ${item.week}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Error loading schedule:', err);
+                // Fallback to local
+                isLocalMode = true;
+                loadMySchedule();
+            }
+        }
         
         function showSection(section) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -642,6 +699,8 @@
             renderCertificates();
         }
         
+        let isLocalMode = !API_URL.includes('localhost') && !API_URL.includes('127.0.0.1');
+        
         async function requestVacation() {
             const start = document.getElementById('vac-start').value;
             const end = document.getElementById('vac-end').value;
@@ -653,6 +712,25 @@
             
             if (new Date(start) > new Date(end)) {
                 alert('Startdatum moet voor einddatum zijn');
+                return;
+            }
+            
+            // Local mode - store in localStorage
+            if (isLocalMode) {
+                const vacations = JSON.parse(localStorage.getItem('local_vacations') || '[]');
+                vacations.push({
+                    id: 'vac_' + Date.now(),
+                    employeeId: userData.id,
+                    start: start,
+                    end: end,
+                    status: 'pending'
+                });
+                localStorage.setItem('local_vacations', JSON.stringify(vacations));
+                alert('Vakantie aangevraagd!');
+                document.getElementById('vac-start').value = '';
+                document.getElementById('vac-end').value = '';
+                document.getElementById('vac-reason').value = '';
+                loadVacations();
                 return;
             }
             
@@ -682,6 +760,15 @@
         }
         
         async function loadVacations() {
+            // Local mode
+            if (isLocalMode) {
+                const vacations = JSON.parse(localStorage.getItem('local_vacations') || '[]');
+                const myVacations = vacations.filter(v => v.employeeId === userData.id);
+                renderVacations(myVacations);
+                renderCalendar(myVacations);
+                return;
+            }
+            
             try {
                 const res = await fetch(`${API_URL}/employees/${userData.id}/vacations`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -694,6 +781,9 @@
                 }
             } catch (err) {
                 console.error('Error loading vacations:', err);
+                // Fallback to local
+                isLocalMode = true;
+                loadVacations();
             }
         }
         
@@ -721,6 +811,15 @@
         
         async function deleteVacation(vacId) {
             if (!confirm('Vakantie annuleren?')) return;
+            
+            // Local mode
+            if (isLocalMode) {
+                let vacations = JSON.parse(localStorage.getItem('local_vacations') || '[]');
+                vacations = vacations.filter(v => v.id !== vacId);
+                localStorage.setItem('local_vacations', JSON.stringify(vacations));
+                loadVacations();
+                return;
+            }
             
             try {
                 await fetch(`${API_URL}/employees/${userData.id}/vacations/${vacId}`, {
