@@ -408,7 +408,7 @@
         saveCompanyData();
     }
 
-    /* Schedule generation (simple) */
+    /* Schedule generation (fair, constraint-based) */
     function generateSchedule() {
         if (!window.employees || window.employees.length === 0 || !window.projects || window.projects.length === 0) {
             alert('⚠️ Voeg eerst werknemers en projecten toe!');
@@ -416,51 +416,134 @@
         }
         const output = document.getElementById('schedule-output');
         let html = '<div style="margin-bottom:12px; color:green;">✅ Planning gegenereerd!</div>';
+
+        // --- Constraint & fairness scheduling ---
+        // Settings
+        const maxHours = window.settings.maxHours || 40;
+        const minRest = window.settings.minRest || 12;
+        const hoursPerAssignment = 8; // can be made configurable
+
+        // Helper: get week number from date (ISO week)
+        function getWeekNumber(dateStr) {
+            const d = new Date(dateStr);
+            d.setHours(0,0,0,0);
+            d.setDate(d.getDate() + 4 - (d.getDay()||7));
+            const yearStart = new Date(d.getFullYear(),0,1);
+            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        }
+
+        // Gather all unique project dates (simulate 4 weeks from today)
+        const today = new Date();
+        const weeks = [0,1,2,3].map(offset => {
+            const d = new Date(today);
+            d.setDate(today.getDate() + offset*7);
+            return {
+                weekNumber: getWeekNumber(d.toISOString().split('T')[0]),
+                startDate: d.toISOString().split('T')[0]
+            };
+        });
+
+        // Build stats object for fairness
+        const stats = {};
+        window.employees.forEach(emp => {
+            stats[emp.id] = {
+                totalHours: 0,
+                assignments: 0,
+                lastAssignedWeek: null,
+                weekHours: {}, // weekNumber: hours
+                assignedDays: new Set()
+            };
+        });
+
+        // Hard constraints
+        function passesHardConstraints(emp, date, weekNumber) {
+            // Vacation: skip if date in any vacation
+            if (Array.isArray(emp.vacations)) {
+                for (const vac of emp.vacations) {
+                    if (date >= vac.start && date <= vac.end) return false;
+                }
+            }
+            // Max hours per week
+            if ((stats[emp.id].weekHours[weekNumber] || 0) + hoursPerAssignment > maxHours) return false;
+            // One assignment per day
+            if (stats[emp.id].assignedDays.has(date)) return false;
+            // (Optional) min rest: not implemented (no shift times)
+            return true;
+        }
+
+        // Fairness penalty
+        function fairnessPenalty(stat, week) {
+            let penalty = 0;
+            penalty += stat.totalHours * 0.5;
+            penalty += stat.assignments * 2;
+            if (stat.lastAssignedWeek === week - 1) penalty += 10;
+            return penalty;
+        }
+
+        // Score function
+        function calculateScore(emp, project, week, stats) {
+            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
+            const priority = fav ? fav.priority : 0;
+            const penalty = fairnessPenalty(stats[emp.id], week);
+            return priority - penalty;
+        }
+
+        // Assignment function
+        function assignEmployee(emp, project, week, date, schedule, stats) {
+            schedule.push({ project, emp, week, date });
+            stats[emp.id].totalHours += hoursPerAssignment;
+            stats[emp.id].assignments += 1;
+            stats[emp.id].lastAssignedWeek = week;
+            stats[emp.id].weekHours[week] = (stats[emp.id].weekHours[week]||0) + hoursPerAssignment;
+            stats[emp.id].assignedDays.add(date);
+        }
+
+        // Main scheduling loop: for each week, for each project, assign best employee
+        const schedule = [];
+        weeks.forEach(({weekNumber, startDate}) => {
+            window.projects.forEach(project => {
+                // For demo: assign on the week's start date
+                const date = startDate;
+                // Filter candidates by hard constraints
+                const candidates = window.employees
+                    .filter(emp => passesHardConstraints(emp, date, weekNumber))
+                    .map(emp => ({
+                        emp,
+                        score: calculateScore(emp, project, weekNumber, stats)
+                    }))
+                    .sort((a, b) => b.score - a.score);
+                const chosen = candidates[0];
+                if (chosen) {
+                    assignEmployee(chosen.emp, project, weekNumber, date, schedule, stats);
+                }
+            });
+        });
+
+        // Render schedule
         html += '<div class="schedule-list">';
-        window.projects.forEach(project => {
-            // available employees = those not on vacation for today (simple check against global vacations)
-            const today = new Date().toISOString().split('T')[0];
-            const availableEmployees = window.employees.filter(emp => {
-                // check if employee has personal vacations (we didn't store per-employee by default)
-                // fallback: all employees are available
-                return true;
-            });
-
-            const sorted = availableEmployees.slice().sort((a,b)=>{
-                const aFav = (project.favoriteEmployees||[]).find(f=>f.id===a.id);
-                const bFav = (project.favoriteEmployees||[]).find(f=>f.id===b.id);
-                return (bFav?.priority||0) - (aFav?.priority||0);
-            });
-
-            sorted.slice(0,3).forEach((emp, idx) => {
-                const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
-                html += `
-                    <div class="schedule-item">
-                        <div class="schedule-project">${escapeHtml(project.name)}</div>
-                        <div class="schedule-details">
-                            <span class="schedule-label">Werknemer:</span><span class="schedule-value">${escapeHtml(emp.name)}</span>
-                            <span class="schedule-label">Plek:</span><span class="schedule-value">${idx+1}</span>
-                            <span class="schedule-label">Prioriteit:</span><span class="schedule-value">${fav ? fav.priority+'%' : '0%'}</span>
-                        </div>
+        schedule.forEach(item => {
+            const { project, emp, week, date } = item;
+            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
+            html += `
+                <div class="schedule-item">
+                    <div class="schedule-project">${escapeHtml(project.name)}</div>
+                    <div class="schedule-details">
+                        <span class="schedule-label">Werknemer:</span><span class="schedule-value">${escapeHtml(emp.name)}</span>
+                        <span class="schedule-label">Week:</span><span class="schedule-value">${week}</span>
+                        <span class="schedule-label">Datum:</span><span class="schedule-value">${formatDate(date)}</span>
+                        <span class="schedule-label">Prioriteit:</span><span class="schedule-value">${fav ? fav.priority+'%' : '0%'}</span>
                     </div>
-                `;
-            });
+                </div>
+            `;
         });
         html += '</div>';
 
-        // table
-        html += '<table style="margin-top:12px;"><tr><th>Project</th><th>Werknemer</th><th>Week/Plek</th><th>%</th></tr>';
-        window.projects.forEach(project => {
-            const availableEmployees = window.employees.slice();
-            const sorted = availableEmployees.slice().sort((a,b)=>{
-                const aFav = (project.favoriteEmployees||[]).find(f=>f.id===a.id);
-                const bFav = (project.favoriteEmployees||[]).find(f=>f.id===b.id);
-                return (bFav?.priority||0) - (aFav?.priority||0);
-            });
-            sorted.slice(0,3).forEach((emp, idx) => {
-                const fav = (project.favoriteEmployees||[]).find(f=>f.id===emp.id);
-                html += `<tr><td>${escapeHtml(project.name)}</td><td>${escapeHtml(emp.name)}</td><td>Week ${idx+1}</td><td>${fav ? fav.priority+'%' : '0%'}</td></tr>`;
-            });
+        // Table view
+        html += '<table style="margin-top:12px;"><tr><th>Project</th><th>Werknemer</th><th>Week</th><th>Datum</th><th>%</th></tr>';
+        schedule.forEach(item => {
+            const { project, emp, week, date } = item;
+            const fav = (project.favoriteEmployees||[]).find(f => f.id === emp.id);
+            html += `<tr><td>${escapeHtml(project.name)}</td><td>${escapeHtml(emp.name)}</td><td>${week}</td><td>${formatDate(date)}</td><td>${fav ? fav.priority+'%' : '0%'}</td></tr>`;
         });
         html += '</table>';
         output.innerHTML = html;
