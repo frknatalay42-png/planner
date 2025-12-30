@@ -772,33 +772,8 @@
                 return;
             }
             
-            // Try API login first
-            fetch('http://localhost:3001/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, loginType })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('userData', JSON.stringify(data.user));
-                    
-                    // Redirect to appropriate page
-                    if (data.user.type === 'company') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'employee.html';
-                    }
-                } else {
-                    // Fallback to local login
-                    localLogin(username, password);
-                }
-            })
-            .catch(() => {
-                // API not available, use local login
-                localLogin(username, password);
-            });
+            // Use local login (API not available in production)
+            localLogin(username, password);
         }
         
         function localLogin(username, password) {
@@ -1274,13 +1249,44 @@
 
         // Initialize demo data
         document.addEventListener('DOMContentLoaded', () => {
+            // Load existing company data from localStorage
+            const savedCompanyData = localStorage.getItem('companyData');
+            if (savedCompanyData) {
+                try {
+                    const parsed = JSON.parse(savedCompanyData);
+                    Object.assign(companyData, parsed);
+                } catch (e) {
+                    console.log('Could not parse saved company data');
+                }
+            }
+            
             if (!companyData['DEMO123']) {
                 companyData['DEMO123'] = {
                     name: 'Demo Bedrijf',
                     email: 'demo@workplan.nl',
                     password: 'demo123',
-                    employees: [],
-                    projects: [],
+                    employees: [
+                        {
+                            id: 'emp1',
+                            name: 'Jan Werknemer',
+                            email: 'jan@demo.nl',
+                            referralCode: 'WORK001',
+                            tempPassword: 'werk123',
+                            vacations: []
+                        },
+                        {
+                            id: 'emp2',
+                            name: 'Marie Medewerker',
+                            email: 'marie@demo.nl',
+                            referralCode: 'WORK002',
+                            tempPassword: 'werk123',
+                            vacations: []
+                        }
+                    ],
+                    projects: [
+                        { id: 'proj1', name: 'Website Redesign', favoriteEmployees: [] },
+                        { id: 'proj2', name: 'App Development', favoriteEmployees: [] }
+                    ],
                     settings: { maxHours: 40, minRest: 12 },
                     adminEmail: 'demo@workplan.nl'
                 };
