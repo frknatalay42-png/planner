@@ -1,91 +1,125 @@
-function getISOWeek(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-  const yearStart = new Date(d.getFullYear(), 0, 1);
-  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}
 
-function isOnVacation(emp, date) {
-  return emp.vacations?.some(v => {
-    const start = new Date(v.start);
-    const end = new Date(v.end);
-    return date >= start && date <= end;
-  });
-}
+/**
+ * generateSchedule.js
+ * Unified, fair scheduling with:
+ * - Vacation awareness
+ * - Max hours per week
+ * - Multiple shifts per day
+ * - minRest enforcement
+ * - Fairness penalty system
+ * - Priority-based scoring
+ */
 
-function fairnessPenalty(stat, week) {
-  let penalty = 0;
-  penalty += stat.totalHours * 0.5;
-  penalty += stat.assignments * 2;
-  if (stat.lastWeek === week - 1) penalty += 10;
-  return penalty;
-}
+function generateSchedule(employees, projects, settings = { maxHours: 40, minRest: 12 }) {
+  const hoursPerAssignmentDefault = 8; // fallback if project shift not set
+  const schedule = [];
 
-function generateSchedule(employees, projects, settings = {}) {
-  const maxHours = settings.maxHours || 40;
-  const hoursPerAssignment = settings.hoursPerAssignment || 8;
-
-  const today = new Date();
-  const weeks = [0, 1, 2, 3].map(i => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i * 7);
-    return { date: d, week: getISOWeek(d) };
-  });
-
+  // Stats per employee for fairness & tracking
   const stats = {};
   employees.forEach(emp => {
-    stats[emp._id || emp.id] = {
+    const id = emp._id || emp.id;
+    stats[id] = {
       totalHours: 0,
       assignments: 0,
-      weekHours: {},
-      lastWeek: null
+      lastAssignedWeek: null,
+      weekHours: {}, // weekNumber -> hours
+      assignedDays: {} // date -> [{ projectId, startHour, endHour }]
     };
   });
 
-  const schedule = [];
+  // Helper: get ISO week number
+  function getWeekNumber(dateStr) {
+    const d = new Date(dateStr);
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate() + 4 - (d.getDay()||7));
+    const yearStart = new Date(d.getFullYear(),0,1);
+    return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+  }
 
-  weeks.forEach(({ date, week }) => {
+  // Hard constraints
+  function passesHardConstraints(emp, date, startHour, endHour) {
+    const id = emp._id || emp.id;
+    const week = getWeekNumber(date);
+
+    // Vacation
+    if (emp.vacations?.some(v => date >= v.start && date <= v.end)) return false;
+
+    // Max hours per week
+    if ((stats[id].weekHours[week] || 0) + (endHour - startHour) > settings.maxHours) return false;
+
+    // Already assigned to overlapping shifts or minRest violation
+    const assigned = stats[id].assignedDays[date] || [];
+    for (const shift of assigned) {
+      // Overlap
+      if (!(endHour <= shift.startHour || startHour >= shift.endHour)) return false;
+      // minRest enforcement
+      if ((startHour - shift.endHour) < settings.minRest && (startHour - shift.endHour) > 0) return false;
+      if ((shift.startHour - endHour) < settings.minRest && (shift.startHour - endHour) > 0) return false;
+    }
+
+    return true;
+  }
+
+  // Fairness penalty
+  function fairnessPenalty(stat, week) {
+    let penalty = 0;
+    penalty += stat.totalHours * 0.5;
+    penalty += stat.assignments * 2;
+    if (stat.lastAssignedWeek === week - 1) penalty += 10;
+    return penalty;
+  }
+
+  // Score function
+  function calculateScore(emp, project, week) {
+    const id = emp._id || emp.id;
+    const fav = project.favoriteEmployees?.find(f => {
+      const fid = f.employeeId?._id || f.employeeId || f.id;
+      return fid.toString() === id.toString();
+    });
+    const priority = fav ? fav.priority : 0;
+    const penalty = fairnessPenalty(stats[id], week);
+    return priority - penalty;
+  }
+
+  // Assign employee
+  function assignEmployee(emp, project, week, date, startHour, endHour) {
+    const id = emp._id || emp.id;
+    schedule.push({ project, emp, week, date, startHour, endHour });
+    stats[id].totalHours += (endHour - startHour);
+    stats[id].assignments += 1;
+    stats[id].lastAssignedWeek = week;
+    stats[id].weekHours[week] = (stats[id].weekHours[week] || 0) + (endHour - startHour);
+    stats[id].assignedDays[date] = stats[id].assignedDays[date] || [];
+    stats[id].assignedDays[date].push({ projectId: project._id || project.id, startHour, endHour });
+  }
+
+  // Main scheduling loop: assume 4-week horizon from today
+  const today = new Date();
+  const weeks = [0,1,2,3].map(offset => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + offset*7);
+    return {
+      weekNumber: getWeekNumber(d.toISOString().split('T')[0]),
+      startDate: d.toISOString().split('T')[0]
+    };
+  });
+
+  weeks.forEach(({ weekNumber, startDate }) => {
     projects.forEach(project => {
-      const candidates = employees
-        .filter(emp => !isOnVacation(emp, date))
-        .filter(emp => {
-          const s = stats[emp._id || emp.id];
-          return (s.weekHours[week] || 0) + hoursPerAssignment <= maxHours;
-        })
-        .map(emp => {
-          const fav = project.favoriteEmployees?.find(f =>
-            (f.employeeId?._id || f.employeeId || f.id).toString() ===
-            (emp._id || emp.id).toString()
-          );
-          const priority = fav ? fav.priority : 0;
-          const penalty = fairnessPenalty(stats[emp._id || emp.id], week);
+      // Expect project.assignments: [{ date, startHour, endHour }]
+      (project.assignments || [{ date: startDate, startHour: 9, endHour: 17 }]).forEach(shift => {
+        const date = shift.date;
+        const startHour = shift.startHour ?? 9;
+        const endHour = shift.endHour ?? (startHour + hoursPerAssignmentDefault);
 
-          return {
-            emp,
-            priority,
-            score: priority - penalty
-          };
-        })
-        .sort((a, b) => b.score - a.score);
+        const candidates = employees
+          .filter(emp => passesHardConstraints(emp, date, startHour, endHour))
+          .map(emp => ({ emp, score: calculateScore(emp, project, weekNumber) }))
+          .sort((a, b) => b.score - a.score);
 
-      const chosen = candidates[0];
-      if (!chosen) return;
-
-      const id = chosen.emp._id || chosen.emp.id;
-      const stat = stats[id];
-
-      stat.totalHours += hoursPerAssignment;
-      stat.assignments += 1;
-      stat.lastWeek = week;
-      stat.weekHours[week] = (stat.weekHours[week] || 0) + hoursPerAssignment;
-
-      schedule.push({
-        project: { id: project._id || project.id, name: project.name },
-        employee: { id, name: chosen.emp.name, email: chosen.emp.email },
-        week,
-        date: date.toISOString().split('T')[0],
-        priority: chosen.priority
+        if (candidates.length > 0) {
+          assignEmployee(candidates[0].emp, project, weekNumber, date, startHour, endHour);
+        }
       });
     });
   });
