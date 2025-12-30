@@ -58,7 +58,67 @@
             </nav>
         </div>
     </header>
-
+    <div class="container">
+        <section id="dashboard" class="section">
+            <div class="card">
+                <h2>Dashboard</h2>
+                <button onclick="generateSchedule()" style="margin-bottom:20px;">Genereer rooster</button>
+                <div id="schedule-output"></div>
+                <div id="calendar"></div>
+            </div>
+        </section>
+        <section id="employees" class="section hidden">
+            <div class="card">
+                <h2>Werknemers</h2>
+                <input id="employee-name" placeholder="Naam" />
+                <input id="employee-email" placeholder="E-mail" />
+                <button onclick="addEmployee()">Toevoegen</button>
+                <div id="employees-list"></div>
+                <div class="csv-upload">
+                    <input type="file" accept=".csv" onchange="handleCSVUpload(event)" style="display:none;" id="csv-input" />
+                    <label for="csv-input" style="cursor:pointer;">📥 Importeer werknemers via CSV</label>
+                </div>
+            </div>
+        </section>
+        <section id="projects" class="section hidden">
+            <div class="card">
+                <h2>Projecten</h2>
+                <input id="project-name" placeholder="Projectnaam" />
+                <button onclick="addProject()">Toevoegen</button>
+                <div id="projects-list"></div>
+            </div>
+        </section>
+        <section id="vacation" class="section hidden">
+            <div class="card">
+                <h2>Vakantie</h2>
+                <input id="vacation-start" type="date" />
+                <input id="vacation-end" type="date" />
+                <button onclick="addVacation()">Toevoegen</button>
+                <div id="vacation-list"></div>
+            </div>
+        </section>
+        <section id="settings" class="section hidden">
+            <div class="card">
+                <h2>Instellingen</h2>
+                <label>Max uren per week: <input id="max-hours" type="number" min="1" max="168" /></label>
+                <label>Min rust tussen diensten (uren): <input id="min-rest" type="number" min="0" max="48" /></label>
+                <button onclick="saveSettings()">Opslaan</button>
+            </div>
+        </section>
+    </div>
+    <script>
+        // Demo data for first run
+        const DEMO = {
+            employees: [
+                { id: '1', name: 'Jan Jansen', email: 'jan@bedrijf.nl', referralCode: 'JAN123', tempPassword: 'welkom1', vacations: [] },
+                { id: '2', name: 'Piet Pietersen', email: 'piet@bedrijf.nl', referralCode: 'PIET12', tempPassword: 'welkom2', vacations: [] }
+            ],
+            projects: [
+                { id: 'a', name: 'Project Alpha', favoriteEmployees: [{ id: '1', priority: 80 }] },
+                { id: 'b', name: 'Project Beta', favoriteEmployees: [{ id: '2', priority: 60 }] }
+            ],
+            settings: { maxHours: 40, minRest: 12 }
+        };
     // FullCalendar globals
     let calendar;
     const projectColors = {};
@@ -256,19 +316,19 @@
         if (!list) return;
         if (!window.employees) window.employees = [];
         list.innerHTML = window.employees.map(emp => `
-            &lt;div class="employee-row"&gt;
-                &lt;div class="employee-info"&gt;
-                    &lt;div&gt;
-                        &lt;div class="employee-name"&gt;${escapeHtml(emp.name)}&lt;/div&gt;
-                        &lt;div class="employee-meta"&gt;${escapeHtml(emp.email)}&lt;/div&gt;
-                        &lt;div class="employee-meta"&gt;Code: ${escapeHtml(emp.referralCode)}&lt;/div&gt;
-                    &lt;/div&gt;
-                &lt;/div&gt;
-                &lt;div class="employee-actions"&gt;
-                    &lt;button class="secondary" style="margin:0;" onclick="removeEmployee('${emp.id}')"&gt;Verwijder&lt;/button&gt;
-                    &lt;button class="secondary" style="margin:0;" onclick="shareLogin('${emp.referralCode}','${emp.tempPassword}')"&gt;Deel Login&lt;/button&gt;
-                &lt;/div&gt;
-            &lt;/div&gt;
+            <div class="employee-row">
+                <div class="employee-info">
+                    <div>
+                        <div class="employee-name">${escapeHtml(emp.name)}</div>
+                        <div class="employee-meta">${escapeHtml(emp.email)}</div>
+                        <div class="employee-meta">Code: ${escapeHtml(emp.referralCode)}</div>
+                    </div>
+                </div>
+                <div class="employee-actions">
+                    <button class="secondary" style="margin:0;" onclick="removeEmployee('${emp.id}')">Verwijder</button>
+                    <button class="secondary" style="margin:0;" onclick="shareLogin('${emp.referralCode}','${emp.tempPassword}')">Deel Login</button>
+                </div>
+            </div>
         `).join('');
     }
 
@@ -348,23 +408,23 @@
                 const priority = isFav ? isFav.priority : 50;
                 const disabled = isFav ? '' : 'disabled';
                 return `
-                    &lt;div style="display:flex; align-items:center; gap:8px; margin:6px 0;"&gt;
-                        &lt;label style="display:flex; align-items:center; gap:8px;"&gt;
-                            &lt;input type="checkbox" ${checked} onchange="toggleFavorite('${project.id}','${emp.id}', this.checked)"&gt;
-                            &lt;span&gt;${escapeHtml(emp.name)}&lt;/span&gt;
-                        &lt;/label&gt;
-                        &lt;div style="display:flex; align-items:center; gap:8px;"&gt;
-                            &lt;input type="range" min="0" max="100" value="${priority}" ${disabled} onchange="updatePriority('${project.id}','${emp.id}', this.value)"&gt;
-                            &lt;span class="priority-value"&gt;${isFav ? isFav.priority : 0}%&lt;/span&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
+                    <div style="display:flex; align-items:center; gap:8px; margin:6px 0;">
+                        <label style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" ${checked} onchange="toggleFavorite('${project.id}','${emp.id}', this.checked)">
+                            <span>${escapeHtml(emp.name)}</span>
+                        </label>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="range" min="0" max="100" value="${priority}" ${disabled} onchange="updatePriority('${project.id}','${emp.id}', this.value)">
+                            <span class="priority-value">${isFav ? isFav.priority : 0}%</span>
+                        </div>
+                    </div>
                 `;
-            }).join('') : '&lt;p style="color:#666; font-style:italic; margin-top:10px;"&gt;&#9888; Voeg eerst werknemers toe om favorieten toe te wijzen.&lt;/p&gt;';
+            }).join('') : '<p style="color:#666; font-style:italic; margin-top:10px;">&#9888; Voeg eerst werknemers toe om favorieten toe te wijzen.</p>';
             return `
-                &lt;div class="project-card card" style="margin-bottom:12px;"&gt;
-                    &lt;div class="project-name" style="font-weight:700;"&gt;${escapeHtml(project.name)}&lt;/div&gt;
-                    &lt;div style="margin-top:12px;"&gt;&lt;strong&gt;Favoriete werknemers (% voorrang):&lt;/strong&gt;${favSection}&lt;/div&gt;
-                &lt;/div&gt;
+                <div class="project-card card" style="margin-bottom:12px;">
+                    <div class="project-name" style="font-weight:700;">${escapeHtml(project.name)}</div>
+                    <div style="margin-top:12px;"><strong>Favoriete werknemers (% voorrang):</strong>${favSection}</div>
+                </div>
             `;
         }).join('');
     }
@@ -413,14 +473,14 @@
         if (!list) return;
         const vacs = window.vacations || [];
         if (vacs.length === 0) {
-            list.innerHTML = '&lt;p style="color:#666;"&gt;Geen vakanties toegevoegd.&lt;/p&gt;';
+            list.innerHTML = '<p style="color:#666;">Geen vakanties toegevoegd.</p>';
             return;
         }
         list.innerHTML = vacs.map(v => `
-            &lt;div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;"&gt;
-                &lt;div&gt;&lt;strong&gt;📅 ${formatDate(v.start)}&lt;/strong&gt; tot &lt;strong&gt;${formatDate(v.end)}&lt;/strong&gt;&lt;/div&gt;
-                &lt;div&gt;&lt;button class="secondary" style="margin:0;" onclick="removeVacation('${v.id}')"&gt;Verwijder&lt;/button&gt;&lt;/div&gt;
-            &lt;/div&gt;
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;">
+                <div><strong>📅 ${formatDate(v.start)}</strong> tot <strong>${formatDate(v.end)}</strong></div>
+                <div><button class="secondary" style="margin:0;" onclick="removeVacation('${v.id}')">Verwijder</button></div>
+            </div>
         `).join('');
     }
 
@@ -565,7 +625,7 @@
 
     function escapeHtml(s) {
         if (!s) return '';
-        return String(s).replace(/[&<>"']/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+        return String(s).replace(/[&<>"']/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]); });
     }
 
     // On load
