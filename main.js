@@ -5,6 +5,42 @@ if (sessionStorage.redirect) {
     window.location.replace(redirect);
 }
 
+// Page routing system
+const ROUTES = {
+    '/': 'login',
+    '#/admin': 'admin',
+    '#/employee': 'employee'
+};
+
+function getCurrentRoute() {
+    const hash = window.location.hash;
+    return ROUTES[hash] || 'login';
+}
+
+function navigateTo(route) {
+    window.location.hash = route;
+    renderPage();
+}
+
+function renderPage() {
+    const route = getCurrentRoute();
+
+    // Hide all pages
+    document.getElementById('login-page').classList.add('hidden');
+    document.getElementById('app').classList.add('hidden');
+
+    if (route === 'login') {
+        document.getElementById('login-page').classList.remove('hidden');
+    } else if (route === 'admin' && currentUser?.type === 'company') {
+        showApp();
+    } else if (route === 'employee' && currentUser?.type === 'employee') {
+        showApp();
+    } else {
+        // Unauthorized - redirect to login
+        window.location.hash = '';
+    }
+}
+
 // main.js
 // All shared logic for WorkPlan app
 
@@ -180,7 +216,7 @@ function localLogin(username, password) {
                 email: company.adminEmail
             }));
             localStorage.setItem('token', 'local-' + Date.now());
-            showApp();
+            navigateTo('#/admin');
         } else {
             showError('login-error', 'Ongeldige bedrijfscode of wachtwoord');
         }
@@ -207,7 +243,7 @@ function localLogin(username, password) {
                 }));
                 localStorage.setItem('token', 'local-' + Date.now());
                 found = true;
-                showApp();
+                navigateTo('#/employee');
                 break;
             }
         }
@@ -255,10 +291,9 @@ function showApp() {
 
 function logout() {
     currentUser = null;
-    document.getElementById('app').classList.add('hidden');
-    document.getElementById('login-page').classList.remove('hidden');
-    document.getElementById('login-password').value = '';
-    closeMenu();
+    localStorage.removeItem('token');
+    localStorage.removeItem('userData');
+    navigateTo('/');
 }
 
 function getCurrentCompany() {
@@ -635,7 +670,7 @@ function saveSettings() {
     alert('✅ Instellingen opgeslagen!');
 }
 
-// Initialize demo data
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     // Load existing company data from localStorage
     const savedCompanyData = localStorage.getItem('companyData');
@@ -648,6 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Initialize demo data if not exists
     if (!companyData['DEMO123']) {
         companyData['DEMO123'] = {
             name: 'Demo Bedrijf',
@@ -680,8 +716,27 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Auto-focus op eerste input
-    document.getElementById('login-username').focus();
+    // Check if already logged in
+    const token = localStorage.getItem('token');
+    const userData = JSON.parse(localStorage.getItem('userData') || 'null');
+
+    if (token && userData) {
+        currentUser = userData;
+        // Navigate to appropriate page if not already there
+        const targetRoute = userData.type === 'company' ? '#/admin' : '#/employee';
+        if (window.location.hash === '') {
+            window.location.hash = targetRoute;
+        }
+    }
+
+    // Render initial page
+    renderPage();
+
+    // Handle hash changes
+    window.addEventListener('hashchange', renderPage);
+
+    // Auto-focus login field
+    document.getElementById('login-username')?.focus();
 });
 
 // Close menu on outside click
