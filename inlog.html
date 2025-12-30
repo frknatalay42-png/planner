@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WorkPlan - Personeelsplanning</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        
+        /* Login Page - Mobiel Optimized */
+        .login-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container .card {
+            width: 100%;
+            max-width: 400px;
+            padding: 25px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .login-type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .login-type-btn {
+            padding: 16px 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .login-type-btn.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        /* Header - Mobiel met Hamburger */
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+        
+        /* Hamburger menu */
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            padding: 10px;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        nav {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 0;
+            background: #2c3e50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            padding: 20px;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+        }
+        
+        nav.open {
+            transform: translateX(0);
+        }
+        
+        nav button {
+            display: block;
+            width: 100%;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 16px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: left;
+        }
+        
+        nav button:hover {
+            background: #2980b9;
+        }
+        
+        /* Cards - Mobiel */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+        
+        h3 {
+            font-size: 18px;
+            margin: 25px 0 15px 0;
+        }
+        
+        /* Form elements - Mobiel */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 15px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 16px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px !important; /* Prevent iOS zoom */
+            margin-bottom: 0;
+            background: white;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        button {
+            width: 100%;
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #229954;
+        }
+        
+        button.secondary {
+            background: #95a5a6;
+        }
+        
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        /* CSV Upload Area - Mobiel */
+        .csv-upload {
+            border: 2px dashed #3498db;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #f8f9fa;
+            margin-bottom: 20px;
+        }
+        
+        /* Employee Rows - Mobiel Cards */
+        .employee-row {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .employee-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .employee-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .employee-meta {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .employee-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        /* Project Cards - Mobiel */
+        .project-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .project-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .favorite-employee-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .favorite-employee-item:last-child {
+            border-bottom: none;
+        }
+        
+        .employee-checkbox-label {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            margin-left: 10px;
+            font-size: 15px;
+        }
+        
+        .priority-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .priority-slider {
+            flex: 1;
+            height: 6px;
+        }
+        
+        .priority-value {
+            font-weight: 600;
+            color: #3498db;
+            min-width: 35px;
+            text-align: right;
+            font-size: 14px;
+        }
+        
+        /* Vacation Tags - Mobiel */
+        .vacation-tag {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin: 4px 2px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .vacation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        /* Schedule Output - Mobiel List View */
+        #schedule-output table {
+            display: none; /* Verberg tabel op mobiel */
+        }
+        
+        .schedule-list {
+            display: block;
+        }
+        
+        .schedule-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .schedule-project {
+            font-weight: 700;
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .schedule-details {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 10px;
+            font-size: 14px;
+        }
+        
+        .schedule-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .schedule-value {
+            color: #333;
+        }
+        
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border-left: 4px solid #c33;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3a3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border-left: 4px solid #3a3;
+        }
+        
+        /* Desktop Only */
+        @media (min-width: 769px) {
+            .login-container {
+                margin: 100px auto;
+                padding: 20px;
+            }
+            
+            .menu-toggle {
+                display: none;
+            }
+            
+            nav {
+                position: static;
+                transform: none;
+                display: flex !important;
+                padding: 0;
+                box-shadow: none;
+                background: none;
+            }
+            
+            nav button {
+                width: auto;
+                display: inline-block;
+                padding: 8px 16px;
+                font-size: 14px;
+                font-weight: normal;
+                margin-bottom: 0;
+                margin-left: 10px;
+            }
+            
+            #schedule-output table {
+                display: table;
+            }
+            
+            .schedule-list {
+                display: none;
+            }
+            
+            .employee-actions {
+                display: block;
+                width: auto;
+            }
+            
+            .employee-row {
+                flex-direction: row;
+                align-items: center;
+            }
+            
+            .employee-actions button {
+                width: auto;
+                margin-left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Inlog Pagina -->
+    <div id="login-page">
+        <div class="login-container">
+            <div class="card">
+                <h1>WorkPlan</h1>
+                <h2>Inloggen</h2>
+                
+                <div class="login-type-selector">
+                    <button class="login-type-btn active" onclick="selectLoginType('company')">Bedrijf</button>
+                    <button class="login-type-btn" onclick="selectLoginType('employee')">Werknemer</button>
+                </div>
+                
+                <div id="login-form">
+                    <div class="form-group">
+                        <label id="login-username-label">Bedrijfscode</label>
+                        <input type="text" id="login-username" placeholder="Bv. DEMO123">
+                    </div>
+                    <div class="form-group">
+                        <label>Wachtwoord</label>
+                        <input type="password" id="login-password" placeholder="Jouw wachtwoord">
+                    </div>
+                    <div id="login-error" class="error hidden"></div>
+                    <button onclick="login()">Inloggen</button>
+                </div>
+                
+                <div id="register-form" class="hidden">
+                    <h3 style="margin-top: 25px; margin-bottom: 15px;">Nieuw Bedrijf Registreren</h3>
+                    <div class="form-group">
+                        <label>Bedrijfsnaam</label>
+                        <input type="text" id="register-name" placeholder="Jouw bedrijfsnaam">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="register-email" placeholder="admin@bedrijf.nl">
+                    </div>
+                    <div class="form-group">
+                        <label>Wachtwoord</label>
+                        <input type="password" id="register-password" placeholder="Minimaal 6 karakters">
+                    </div>
+                    <div id="register-error" class="error hidden"></div>
+                    <button onclick="registerCompany()">Registreer Bedrijf</button>
+                    <button class="secondary-btn" onclick="showLogin()">Terug naar inloggen</button>
+                </div>
+                
+                <div id="login-extra-links" class="register-link" style="text-align: center; margin-top: 20px; font-size: 14px;">
+                    <p>Nog geen account? <a onclick="showRegister()" style="color: #3498db; cursor: pointer;">Registreer je bedrijf</a></p>
+                    <p style="margin-top: 12px; font-size: 13px; color: #999;">Werknemers ontvangen inloggegevens van hun werkgever</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden">
+        <header>
+            <div class="header-content">
+                <h1>WorkPlan</h1>
+                <span id="user-info" style="color: white; margin-right: 10px;"></span>
+                <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+                <nav id="main-nav">
+                    <!-- Dynamisch gevuld -->
+                </nav>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Dashboard -->
+            <div id="dashboard" class="section">
+                <div class="card">
+                    <h2>Planning Overzicht</h2>
+                    <button onclick="generateSchedule()" style="margin-bottom: 20px;">Genereer Automatische Planning</button>
+                    <div id="schedule-output"></div>
+                </div>
+            </div>
+
+            <!-- Admin Sections -->
+            <div id="admin-sections" class="hidden">
+                <!-- Werknemers Beheer -->
+                <div id="employees" class="section hidden">
+                    <div class="card">
+                        <h2>Werknemers Beheer</h2>
+                        <div class="form-group">
+                            <label>Naam</label>
+                            <input type="text" id="employee-name" placeholder="Naam werknemer">
+                        </div>
+                        <div class="form-group">
+                            <label>E-mail</label>
+                            <input type="email" id="employee-email" placeholder="E-mailadres">
+                        </div>
+                        <button onclick="addEmployee()">Werknemer Toevoegen</button>
+                        
+                        <h3 style="margin-top: 30px;">CSV Import</h3>
+                        <div class="csv-upload" onclick="document.getElementById('csv-file').click()">
+                            <p>Klik hier om CSV bestand te uploaden</p>
+                            <p style="font-size: 13px; color: #666; margin-top: 5px;">Format: naam, email</p>
+                        </div>
+                        <input type="file" id="csv-file" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+                        
+                        <h3 style="margin-top: 30px; margin-bottom: 15px;">Werknemers Lijst</h3>
+                        <div id="employees-list"></div>
+                    </div>
+                </div>
+
+                <!-- Projecten -->
+                <div id="projects" class="section hidden">
+                    <div class="card">
+                        <h2>Projecten</h2>
+                        <div class="form-group">
+                            <label>Projectnaam</label>
+                            <input type="text" id="project-name" placeholder="Project naam">
+                        </div>
+                        <button onclick="addProject()">Project Toevoegen</button>
+                        
+                        <h3 style="margin-top: 30px; margin-bottom: 15px;">Bestaande Projecten</h3>
+                        <div id="projects-list"></div>
+                    </div>
+                </div>
+
+                <!-- Instellingen -->
+                <div id="settings" class="section hidden">
+                    <div class="card">
+                        <h2>Instellingen</h2>
+                        <div class="form-group">
+                            <label>Max uren per week</label>
+                            <input type="number" id="max-hours" value="40">
+                        </div>
+                        <div class="form-group">
+                            <label>Min rust tussen diensten (uur)</label>
+                            <input type="number" id="min-rest" value="12">
+                        </div>
+                        <button onclick="saveSettings()">Instellingen Opslaan</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Sections -->
+            <div id="employee-sections" class="hidden">
+                <!-- Vakantie -->
+                <div id="vacation" class="section hidden">
+                    <div class="card">
+                        <h2>Mijn Vakantie & Afwezigheid</h2>
+                        <div class="form-group">
+                            <label>Start datum</label>
+                            <input type="date" id="vacation-start">
+                        </div>
+                        <div class="form-group">
+                            <label>Eind datum</label>
+                            <input type="date" id="vacation-end">
+                        </div>
+                        <button onclick="addVacation()">Vakantie Toevoegen</button>
+                        
+                        <h3 style="margin-top: 25px; margin-bottom: 15px;">Mijn Vakanties</h3>
+                        <div id="vacation-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        const companyData = {};
+        let currentUser = null;
+        let loginType = 'company';
+        let menuOpen = false;
+
+        // Navigation
+        function toggleMenu() {
+            menuOpen = !menuOpen;
+            const nav = document.getElementById('main-nav');
+            nav.classList.toggle('open', menuOpen);
+        }
+
+        function closeMenu() {
+            menuOpen = false;
+            document.getElementById('main-nav').classList.remove('open');
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+            closeMenu();
+            
+            if (sectionId === 'employees') updateEmployeesList();
+            if (sectionId === 'projects') updateProjectsList();
+            if (sectionId === 'vacation') updateVacationList();
+        }
+
+        // Login functions
+        function selectLoginType(type) {
+            loginType = type;
+            document.querySelectorAll('.login-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            const label = document.getElementById('login-username-label');
+            const input = document.getElementById('login-username');
+            
+            if (type === 'company') {
+                label.textContent = 'Bedrijfscode';
+                input.placeholder = 'Bv. DEMO123';
+            } else {
+                label.textContent = 'Werknemerscode';
+                input.placeholder = 'Jouw unieke code';
+            }
+        }
+
+        function showRegister() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+            document.getElementById('login-extra-links').classList.add('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('login-extra-links').classList.remove('hidden');
+            document.getElementById('register-error').classList.add('hidden');
+        }
+
+        function showError(id, message) {
+            const errorEl = document.getElementById(id);
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            setTimeout(() => errorEl.classList.add('hidden'), 5000);
+        }
+
+        function registerCompany() {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            if (!name || !email || !password) {
+                showError('register-error', 'Vul alle velden in');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('register-error', 'Wachtwoord moet minimaal 6 karakters zijn');
+                return;
+            }
+            
+            const companyCode = name.substring(0, 3).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+            
+            companyData[companyCode] = {
+                name,
+                email,
+                password,
+                employees: [],
+                projects: [],
+                settings: { maxHours: 40, minRest: 12 },
+                adminEmail: email
+            };
+            
+            alert(`✅ Bedrijf geregistreerd!\n\nJe bedrijfscode: ${companyCode}\n\nBewaar deze code, je hebt hem nodig om in te loggen.`);
+            showLogin();
+            document.getElementById('register-name').value = '';
+            document.getElementById('register-email').value = '';
+            document.getElementById('register-password').value = '';
+        }
+
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!username || !password) {
+                showError('login-error', 'Vul alle velden in');
+                return;
+            }
+            
+            if (loginType === 'company') {
+                const company = companyData[username.toUpperCase()];
+                if (company && company.password === password) {
+                    currentUser = {
+                        type: 'company',
+                        code: username.toUpperCase(),
+                        email: company.adminEmail
+                    };
+                    showApp();
+                } else {
+                    showError('login-error', 'Ongeldige bedrijfscode of wachtwoord');
+                }
+            } else {
+                let found = false;
+                for (const companyCode in companyData) {
+                    const employee = companyData[companyCode].employees.find(emp => 
+                        emp.referralCode === username && emp.tempPassword === password
+                    );
+                    if (employee) {
+                        currentUser = {
+                            type: 'employee',
+                            code: companyCode,
+                            employeeId: employee.id,
+                            name: employee.name
+                        };
+                        found = true;
+                        showApp();
+                        break;
+                    }
+                }
+                if (!found) {
+                    showError('login-error', 'Ongeldige werknemerscode of wachtwoord');
+                }
+            }
+        }
+
+        function showApp() {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            
+            const nav = document.getElementById('main-nav');
+            const userInfo = document.getElementById('user-info');
+            
+            if (currentUser.type === 'company') {
+                document.getElementById('admin-sections').classList.remove('hidden');
+                document.getElementById('employee-sections').classList.add('hidden');
+                userInfo.textContent = `Bedrijf: ${currentUser.code}`;
+                
+                nav.innerHTML = `
+                    <button onclick="showSection('dashboard')">📊 Dashboard</button>
+                    <button onclick="showSection('employees')">👥 Werknemers</button>
+                    <button onclick="showSection('projects')">📋 Projecten</button>
+                    <button onclick="showSection('settings')">⚙️ Instellingen</button>
+                    <button onclick="logout()" style="background: #e74c3c; margin-top: 20px;">🚪 Uitloggen</button>
+                `;
+            } else {
+                document.getElementById('admin-sections').classList.add('hidden');
+                document.getElementById('employee-sections').classList.remove('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                userInfo.textContent = `Werknemer: ${currentUser.name}`;
+                
+                nav.innerHTML = `
+                    <button onclick="showSection('dashboard')">📊 Dashboard</button>
+                    <button onclick="showSection('vacation')">🏖️ Vakantie</button>
+                    <button onclick="logout()" style="background: #e74c3c; margin-top: 20px;">🚪 Uitloggen</button>
+                `;
+            }
+            
+            loadCompanyData();
+            showSection('dashboard');
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('app').classList.add('hidden');
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('login-password').value = '';
+            closeMenu();
+        }
+
+        function getCurrentCompany() {
+            return companyData[currentUser.code];
+        }
+
+        function loadCompanyData() {
+            if (!currentUser) return;
+            
+            const company = getCurrentCompany();
+            if (!company) return;
+            
+            if (currentUser.type === 'company') {
+                window.employees = company.employees;
+                window.projects = company.projects;
+                window.settings = company.settings;
+            } else {
+                window.employees = company.employees;
+                window.projects = company.projects;
+                window.vacations = company.employees.find(e => e.id === currentUser.employeeId)?.vacations || [];
+            }
+        }
+
+        function saveCompanyData() {
+            if (!currentUser) return;
+            
+            const company = getCurrentCompany();
+            if (company) {
+                company.employees = window.employees || [];
+                company.projects = window.projects || [];
+                company.settings = window.settings || { maxHours: 40, minRest: 12 };
+            }
+            
+            localStorage.setItem('companyData', JSON.stringify(companyData));
+        }
+
+        setInterval(saveCompanyData, 5000);
+
+        // Employee management
+        function addEmployee() {
+            const name = document.getElementById('employee-name').value;
+            const email = document.getElementById('employee-email').value;
+            
+            if (!name || !email) {
+                alert('⚠️ Vul alle velden in');
+                return;
+            }
+            
+            const employee = {
+                id: Date.now(),
+                name,
+                email,
+                referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                tempPassword: Math.random().toString(36).substring(2, 10),
+                vacations: []
+            };
+            
+            window.employees.push(employee);
+            document.getElementById('employee-name').value = '';
+            document.getElementById('employee-email').value = '';
+            updateEmployeesList();
+            saveCompanyData();
+            
+            setTimeout(() => {
+                alert(`✅ Werknemer toegevoegd!\n\nInloggegevens voor ${name}:\nCode: ${employee.referralCode}\nWachtwoord: ${employee.tempPassword}\n\nDeel deze gegevens veilig met je werknemer.`);
+            }, 100);
+        }
+
+        function updateEmployeesList() {
+            const list = document.getElementById('employees-list');
+            list.innerHTML = window.employees.map(emp => `
+                <div class="employee-row">
+                    <div class="employee-info">
+                        <div>
+                            <div class="employee-name">${emp.name}</div>
+                            <div class="employee-meta">${emp.email}</div>
+                            <div class="employee-meta">Code: ${emp.referralCode}</div>
+                        </div>
+                    </div>
+                    <div class="employee-actions">
+                        <button class="secondary" style="margin: 0;" onclick="removeEmployee(${emp.id})">Verwijder</button>
+                        <button class="secondary" style="margin: 0;" onclick="shareLogin('${emp.referralCode}', '${emp.tempPassword}')">Deel Login</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function removeEmployee(id) {
+            if (confirm('⚠️ Weet je zeker dat je deze werknemer wilt verwijderen?')) {
+                window.employees = window.employees.filter(emp => emp.id !== id);
+                updateEmployeesList();
+                saveCompanyData();
+            }
+        }
+
+        function shareLogin(code, password) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'WorkPlan Inloggegevens',
+                    text: `Je WorkPlan inloggegevens:\nCode: ${code}\nWachtwoord: ${password}`
+                });
+            } else {
+                navigator.clipboard.writeText(`Code: ${code}\nWachtwoord: ${password}`);
+                alert('📋 Inloggegevens gekopieerd naar klembord!');
+            }
+        }
+
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const lines = e.target.result.split('\n');
+                let added = 0;
+                
+                lines.forEach(line => {
+                    const [name, email] = line.split(',');
+                    if (name && email && name.trim() && email.trim()) {
+                        window.employees.push({
+                            id: Date.now() + Math.random(),
+                            name: name.trim(),
+                            email: email.trim(),
+                            referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                            tempPassword: Math.random().toString(36).substring(2, 10),
+                            vacations: []
+                        });
+                        added++;
+                    }
+                });
+                
+                saveCompanyData();
+                updateEmployeesList();
+                alert(`✅ CSV geïmporteerd! ${added} werknemers toegevoegd.`);
+            };
+            reader.readAsText(file);
+        }
+
+        // Project management
+        function addProject() {
+            const name = document.getElementById('project-name').value;
+            if (!name) return;
+            
+            window.projects.push({
+                id: Date.now(),
+                name,
+                favoriteEmployees: []
+            });
+            
+            document.getElementById('project-name').value = '';
+            updateProjectsList();
+            saveCompanyData();
+        }
+
+        function updateProjectsList() {
+            const list = document.getElementById('projects-list');
+            list.innerHTML = window.projects.map(project => `
+                <div class="project-card">
+                    <div class="project-name">${project.name}</div>
+                    <div style="margin-top: 15px;">
+                        <strong>Favoriete werknemers (% voorrang):</strong>
+                        ${window.employees.map(emp => {
+                            const isFav = project.favoriteEmployees.find(f => f.id === emp.id);
+                            return `
+                                <div class="favorite-employee-item">
+                                    <label class="employee-checkbox-label">
+                                        <input type="checkbox" 
+                                            ${isFav ? 'checked' : ''}
+                                            onchange="toggleFavorite(${project.id}, ${emp.id})">
+                                        <span style="margin-left: 8px;">${emp.name}</span>
+                                    </label>
+                                    <div class="priority-control">
+                                        <input type="range" class="priority-slider" min="0" max="100" 
+                                            value="${isFav?.priority || 50}"
+                                            onchange="updatePriority(${project.id}, ${emp.id}, this.value)"
+                                            ${!isFav ? 'disabled' : ''}>
+                                        <span class="priority-value">${isFav?.priority || 0}%</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleFavorite(projectId, employeeId) {
+            const project = window.projects.find(p => p.id === projectId);
+            const existing = project.favoriteEmployees.find(f => f.id === employeeId);
+            
+            if (existing) {
+                project.favoriteEmployees = project.favoriteEmployees.filter(f => f.id !== employeeId);
+            } else {
+                project.favoriteEmployees.push({ id: employeeId, priority: 50 });
+            }
+            
+            updateProjectsList();
+            saveCompanyData();
+        }
+
+        function updatePriority(projectId, employeeId, value) {
+            const project = window.projects.find(p => p.id === projectId);
+            const employee = project.favoriteEmployees.find(f => f.id === employeeId);
+            if (employee) {
+                employee.priority = parseInt(value);
+                updateProjectsList();
+                saveCompanyData();
+            }
+        }
+
+        // Vacation management
+        function addVacation() {
+            const start = document.getElementById('vacation-start').value;
+            const end = document.getElementById('vacation-end').value;
+            
+            if (!start || !end) {
+                alert('⚠️ Selecteer start en eind datum');
+                return;
+            }
+            
+            if (new Date(start) > new Date(end)) {
+                alert('⚠️ Startdatum moet voor einddatum liggen');
+                return;
+            }
+            
+            if (currentUser.type === 'employee') {
+                const employee = window.employees.find(e => e.id === currentUser.employeeId);
+                if (!employee.vacations) employee.vacations = [];
+                employee.vacations.push({ id: Date.now(), start, end });
+                window.vacations = employee.vacations;
+            } else {
+                window.vacations.push({ id: Date.now(), start, end });
+            }
+            
+            document.getElementById('vacation-start').value = '';
+            document.getElementById('vacation-end').value = '';
+            updateVacationList();
+            saveCompanyData();
+        }
+
+        function updateVacationList() {
+            const list = document.getElementById('vacation-list');
+            const vacations = currentUser.type === 'employee' 
+                ? window.employees.find(e => e.id === currentUser.employeeId)?.vacations || []
+                : window.vacations || [];
+            
+            list.innerHTML = vacations.map(vac => `
+                <div class="vacation-item">
+                    <div>
+                        <strong>📅 ${formatDate(vac.start)}</strong> tot <strong>${formatDate(vac.end)}</strong>
+                    </div>
+                    <button class="secondary" style="width: auto; margin: 0;" onclick="removeVacation(${vac.id})">Verwijder</button>
+                </div>
+            `).join('');
+        }
+
+        function removeVacation(id) {
+            if (confirm('⚠️ Deze vakantie verwijderen?')) {
+                if (currentUser.type === 'employee') {
+                    const employee = window.employees.find(e => e.id === currentUser.employeeId);
+                    employee.vacations = employee.vacations.filter(vac => vac.id !== id);
+                    window.vacations = employee.vacations;
+                } else {
+                    window.vacations = window.vacations.filter(vac => vac.id !== id);
+                }
+                updateVacationList();
+                saveCompanyData();
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        // Schedule generation
+        function generateSchedule() {
+            if (!window.employees || window.employees.length === 0 || !window.projects || window.projects.length === 0) {
+                alert('⚠️ Voeg eerst werknemers en projecten toe!');
+                return;
+            }
+            
+            const output = document.getElementById('schedule-output');
+            let scheduleHTML = '<div class="success" style="margin-bottom: 20px;">✅ Planning gegenereerd!</div>';
+            
+            // Mobiele list view
+            scheduleHTML += '<div class="schedule-list">';
+            
+            window.projects.forEach(project => {
+                const availableEmployees = window.employees.filter(emp => {
+                    if (currentUser.type === 'employee' && emp.id !== currentUser.employeeId) return false;
+                    
+                    const emp = window.employees.find(e => e.id === emp.id);
+                    const isOnVacation = emp?.vacations?.some(vac => {
+                        const today = new Date().toISOString().split('T')[0];
+                        return today >= vac.start && today <= vac.end;
+                    });
+                    return !isOnVacation;
+                });
+                
+                if (availableEmployees.length > 0) {
+                    const sortedEmployees = availableEmployees.sort((a, b) => {
+                        const aFav = project.favoriteEmployees.find(f => f.id === a.id);
+                        const bFav = project.favoriteEmployees.find(f => f.id === b.id);
+                        return (bFav?.priority || 0) - (aFav?.priority || 0);
+                    });
+                    
+                    sortedEmployees.slice(0, 3).forEach((emp, index) => {
+                        const fav = project.favoriteEmployees.find(f => f.id === emp.id);
+                        scheduleHTML += `
+                            <div class="schedule-item">
+                                <div class="schedule-project">${project.name}</div>
+                                <div class="schedule-details">
+                                    <span class="schedule-label">Werknemer:</span>
+                                    <span class="schedule-value">${emp.name}</span>
+                                    <span class="schedule-label">Week:</span>
+                                    <span class="schedule-value">${index + 1}</span>
+                                    <span class="schedule-label">Prioriteit:</span>
+                                    <span class="schedule-value">${fav?.priority || 0}%</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+            
+            scheduleHTML += '</div>';
+            
+            // Desktop tabel (verborgen op mobiel)
+            scheduleHTML += '<table style="margin-top: 20px;"><tr><th>Project</th><th>Werknemer</th><th>Dag</th><th>%</th></tr>';
+            
+            window.projects.forEach(project => {
+                const availableEmployees = window.employees.filter(emp => {
+                    const emp = window.employees.find(e => e.id === emp.id);
+                    const isOnVacation = emp?.vacations?.some(vac => {
+                        const today = new Date().toISOString().split('T')[0];
+                        return today >= vac.start && today <= vac.end;
+                    });
+                    return !isOnVacation;
+                });
+                
+                if (availableEmployees.length > 0) {
+                    const sortedEmployees = availableEmployees.sort((a, b) => {
+                        const aFav = project.favoriteEmployees.find(f => f.id === a.id);
+                        const bFav = project.favoriteEmployees.find(f => f.id === b.id);
+                        return (bFav?.priority || 0) - (aFav?.priority || 0);
+                    });
+                    
+                    sortedEmployees.slice(0, 3).forEach((emp, index) => {
+                        const fav = project.favoriteEmployees.find(f => f.id === emp.id);
+                        scheduleHTML += `
+                            <tr>
+                                <td>${project.name}</td>
+                                <td>${emp.name}</td>
+                                <td>Week ${index + 1}</td>
+                                <td>${fav?.priority || 0}%</td>
+                            </tr>
+                        `;
+                    });
+                }
+            });
+            
+            scheduleHTML += '</table>';
+            output.innerHTML = scheduleHTML;
+        }
+
+        function saveSettings() {
+            window.settings = {
+                maxHours: parseInt(document.getElementById('max-hours').value),
+                minRest: parseInt(document.getElementById('min-rest').value)
+            };
+            saveCompanyData();
+            alert('✅ Instellingen opgeslagen!');
+        }
+
+        // Initialize demo data
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!companyData['DEMO123']) {
+                companyData['DEMO123'] = {
+                    name: 'Demo Bedrijf',
+                    email: 'demo@workplan.nl',
+                    password: 'demo123',
+                    employees: [],
+                    projects: [],
+                    settings: { maxHours: 40, minRest: 12 },
+                    adminEmail: 'demo@workplan.nl'
+                };
+            }
+            
+            // Auto-focus op eerste input
+            document.getElementById('login-username').focus();
+        });
+
+        // Close menu on outside click
+        document.addEventListener('click', (e) => {
+            if (menuOpen && !e.target.closest('header')) {
+                closeMenu();
+            }
+        });
+    </script>
+</body>
+</html>
